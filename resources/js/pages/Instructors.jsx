@@ -4,6 +4,7 @@ import { Star, Users, BookOpen, GraduationCap, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { usePageTitle } from "@/lib/usePageTitle";
 import AuthNavActions from "@/components/AuthNavActions";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pDk:"#1A2044", pLt:"#E8E9F1",
@@ -26,6 +27,7 @@ function initials(name) {
 }
 
 export default function InstructorsPage() {
+  const C = useThemeColors();
   usePageTitle("Our Instructors");
 
   const [instructors, setInstructors] = useState(SAMPLE_INSTRUCTORS);
@@ -59,6 +61,7 @@ export default function InstructorsPage() {
         <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/courses" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Courses</Link>
           <Link to="/instructors" style={{ color:C.p, fontSize:14, fontWeight:700, padding:"7px 12px", borderRadius:8, textDecoration:"none", background:C.pLt }}>Instructors</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

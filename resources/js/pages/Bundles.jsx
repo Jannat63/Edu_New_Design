@@ -4,6 +4,7 @@ import { usePageTitle } from "@/lib/usePageTitle";
 import { GraduationCap, Package, ChevronRight, Sparkles } from "lucide-react";
 import AuthNavActions from "@/components/AuthNavActions";
 import { api } from "@/lib/api";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pDk:"#1A2044", pLt:"#E8E9F1",
@@ -14,6 +15,7 @@ const C = {
 };
 
 function Navbar() {
+  const C = useThemeColors();
   return (
     <nav style={{ position:"sticky",top:0,zIndex:100,background:C.w,borderBottom:`1px solid ${C.bd}` }}>
       <div style={{ display:"flex",alignItems:"center",height:64,gap:28,maxWidth:1280,margin:"0 auto",padding:"0 clamp(20px,4vw,40px)" }}>
@@ -29,6 +31,7 @@ function Navbar() {
           ))}
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </div>
@@ -98,6 +101,7 @@ function BundleCard({ b }) {
 }
 
 export default function BundlesPage() {
+  const C = useThemeColors();
   usePageTitle("Course Bundles");
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);

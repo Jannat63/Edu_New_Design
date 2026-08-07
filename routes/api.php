@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\LessonController;
+use App\Http\Controllers\Api\DoubtController;
+use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\CertificateController;
@@ -85,6 +87,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/{id}/progress',    [LessonController::class, 'updateProgress']);
         Route::post('/{id}/complete',    [LessonController::class, 'markComplete']);
         Route::get('/{id}/resources',    [LessonController::class, 'resources']);
+        // AI doubt-solving assistant (Phase 2 item 3) — throttled per-minute
+        // here as a burst guard; DoubtController enforces the real per-day
+        // cost cap since throttle:X,1 alone resets every minute.
+        Route::get('/{id}/doubts',       [DoubtController::class, 'show']);
+        Route::post('/{id}/doubts',      [DoubtController::class, 'ask'])->middleware('throttle:20,1');
     });
 
     // ── QUIZZES ───────────────────────────────────────────────────────────────
@@ -149,6 +156,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/',                  [WishlistController::class, 'index']);
         Route::post('/courses/{id}',     [WishlistController::class, 'toggle']);
         Route::get('/courses/{id}/check',[WishlistController::class, 'check']);
+    });
+
+    // ── REFERRALS (Phase 2 item 4) — open to any logged-in user, not just instructors ──
+    Route::middleware('auth:sanctum')->prefix('referrals')->group(function () {
+        Route::get('/summary',      [ReferralController::class, 'summary']);
+        Route::get('/commissions',  [ReferralController::class, 'commissions']);
+        Route::get('/payouts',      [ReferralController::class, 'myPayouts']);
+        Route::post('/payouts',     [ReferralController::class, 'requestPayout']);
     });
 
     // ── DISCUSSIONS ───────────────────────────────────────────────────────────
@@ -318,6 +333,10 @@ Route::prefix('v1')->group(function () {
         // Payouts admin
         Route::get('/payouts',           [PayoutController::class, 'adminIndex']);
         Route::put('/payouts/{id}',      [PayoutController::class, 'adminUpdate']);
+
+        // Referral payouts admin (Phase 2 item 4)
+        Route::get('/referral-payouts',      [ReferralController::class, 'adminIndex']);
+        Route::put('/referral-payouts/{id}', [ReferralController::class, 'adminUpdate']);
 
         // Mega Menu
         Route::get('/menu',                  [MenuItemController::class, 'index']);

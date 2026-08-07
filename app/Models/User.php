@@ -15,6 +15,7 @@ class User extends Authenticatable
     protected $fillable = [
         'role_id', 'name', 'email', 'phone', 'avatar',
         'city', 'bio', 'password', 'is_active', 'is_banned',
+        'referral_code', 'referred_by_user_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -72,6 +73,52 @@ class User extends Authenticatable
     public function quizResults()
     {
         return $this->hasMany(QuizResult::class);
+    }
+
+    // ── REFERRALS ────────────────────────────────────────────────────────────
+    /** People this user referred (their referred_by_user_id points at us). */
+    public function referredUsers()
+    {
+        return $this->hasMany(User::class, 'referred_by_user_id');
+    }
+
+    /** Who referred this user, if anyone. */
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
+    }
+
+    public function referralCommissions()
+    {
+        return $this->hasMany(ReferralCommission::class, 'referrer_id');
+    }
+
+    public function referralPayouts()
+    {
+        return $this->hasMany(ReferralPayout::class);
+    }
+
+    /**
+     * Returns this user's referral code, generating and persisting one on
+     * first call. Registration sets this immediately for new accounts (see
+     * AuthController::register), but any account created before this
+     * feature existed won't have one yet — this backfills it the first time
+     * they visit their referral page rather than needing a one-off migration
+     * data pass across the whole users table.
+     */
+    public function ensureReferralCode(): string
+    {
+        if ($this->referral_code) {
+            return $this->referral_code;
+        }
+
+        do {
+            $code = strtoupper(\Illuminate\Support\Str::random(6));
+        } while (self::where('referral_code', $code)->exists());
+
+        $this->update(['referral_code' => $code]);
+
+        return $code;
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import {
   LayoutGrid, List, SlidersHorizontal, X, GraduationCap, Check, ArrowUpDown,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 // ── TOKENS ───────────────────────────────────────────────────────────────────
 const C = {
@@ -37,7 +38,7 @@ const ALL_COURSES = [
   { id:12, title:"Excel for Business & Data Analysis Masterclass",    cat:"Finance",           catC:"#C98A2C", instructor:"Mohammed Ali",      av:"MA", rating:4.5, reviews:380,  price:500,  orig:1000, durH:18, dur:"18h", studentsN:4200,  students:"4.2K", level:"Beginner",      thumb:"linear-gradient(135deg,#5C3B28,#A87A50)", emoji:"📊", lang:"Bengali" },
 ];
 
-const CAT_OPTS   = ["Web Development","Data Science","Graphic Design","Digital Marketing","English & IELTS","Finance"];
+const CAT_OPTS   = ["Web Development","Data Science","Graphic Design","Digital Marketing","English & IELTS","Finance","Job Prep / BCS & Bank Jobs"];
 const LEVEL_OPTS = ["Beginner","Intermediate","Advanced","All Levels"];
 const LANG_OPTS  = ["Bengali","English","Bengali & English"];
 const SORT_OPTS  = [
@@ -81,6 +82,7 @@ function Checkbox({ checked, onChange, label, count }) {
 
 // ── NAVBAR ───────────────────────────────────────────────────────────────────
 function Navbar() {
+  const C = useThemeColors();
   return (
     <nav style={{ position:"sticky",top:0,zIndex:100,background:C.w,borderBottom:`1px solid ${C.bd}` }}>
       <div style={{ display:"flex",alignItems:"center",height:64,gap:28,maxWidth:1280,margin:"0 auto",padding:"0 clamp(20px,4vw,40px)" }}>
@@ -96,6 +98,7 @@ function Navbar() {
           ))}
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </div>
@@ -320,6 +323,7 @@ function Footer() {
 
 // ── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  const C = useThemeColors();
   usePageTitle("All Courses");
   const [courses,   setCourses]   = useState(ALL_COURSES); // starts with sample data
   const [cats,      setCats]      = useState([]);

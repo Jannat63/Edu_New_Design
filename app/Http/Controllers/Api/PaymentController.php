@@ -376,6 +376,8 @@ class PaymentController extends Controller
             'gateway_response' => $gatewayResponse,
         ]);
 
+        $this->creditReferralCommission($payment);
+
         if ($payment->bundle_id) {
             $this->enrollBundleCourses($payment->user_id, $payment->bundle, (float) $payment->amount, $payment->id);
             return;
@@ -398,6 +400,43 @@ class PaymentController extends Controller
                 \App\Models\Coupon::where('code', $payment->coupon_code)->increment('used_count');
             }
         }
+    }
+
+    /**
+     * Credits the paying user's referrer, if they have one, for this
+     * payment (Phase 2 item 4). Fires on every completed payment covered by
+     * markPaid() — course or bundle, any gateway — since that's the single
+     * point all three success callbacks converge on. The unique index on
+     * referral_commissions.payment_id makes this idempotent on its own, but
+     * markPaid()'s own `status === 'paid'` guard already prevents this from
+     * running twice for the same payment, so this is a defensive backstop
+     * rather than the primary safeguard.
+     */
+    private function creditReferralCommission(Payment $payment): void
+    {
+        $payer = $payment->user;
+        if (!$payer || !$payer->referred_by_user_id) {
+            return;
+        }
+
+        if (\App\Models\ReferralCommission::where('payment_id', $payment->id)->exists()) {
+            return;
+        }
+
+        $rate = \App\Http\Controllers\Api\ReferralController::commissionRatePercent();
+        $amount = round(((float) $payment->amount) * $rate / 100, 2);
+
+        if ($amount <= 0) {
+            return;
+        }
+
+        \App\Models\ReferralCommission::create([
+            'referrer_id'           => $payer->referred_by_user_id,
+            'referred_user_id'      => $payer->id,
+            'payment_id'            => $payment->id,
+            'amount'                => $amount,
+            'rate_percent_at_time'  => $rate,
+        ]);
     }
 
     /**

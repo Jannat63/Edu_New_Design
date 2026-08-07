@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { useSiteContent } from '@/lib/useSiteContent';
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -12,6 +13,7 @@ const C = {
 };
 
 export default function MissionPage() {
+  const C = useThemeColors();
   usePageTitle("Our Mission");
   const { data: cms } = useSiteContent('mission');
 
@@ -25,8 +27,9 @@ export default function MissionPage() {
           </div>
           <span style={{ fontFamily:"'Fraunces',serif", color:C.t1, fontWeight:600, fontSize:21, letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a, fontStyle:"italic", fontWeight:500 }}>BD</span></span>
         </Link>
-        <div style={{ display:"flex", gap:6 }}>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/about" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>About</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

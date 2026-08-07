@@ -307,6 +307,8 @@ class SiteSettingSeeder extends Seeder
             // Email
             ['key' => 'mail_from_name',      'value' => 'EduBD',                                          'type' => 'string',  'group' => 'email',    'label' => 'Mail From Name'],
             ['key' => 'mail_from_address',   'value' => 'noreply@edubd.com',                              'type' => 'string',  'group' => 'email',    'label' => 'Mail From Address'],
+            // Referrals (Phase 2 item 4)
+            ['key' => 'referral_commission_percent', 'value' => '15', 'type' => 'integer', 'group' => 'referral', 'label' => 'Referral Commission %'],
         ];
 
         foreach ($settings as $s) {

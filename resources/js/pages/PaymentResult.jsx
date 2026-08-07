@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle2, XCircle, AlertCircle, ArrowRight, GraduationCap } from "lucide-react";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -15,6 +16,7 @@ const C = {
 };
 
 export default function PaymentResultPage() {
+  const C = useThemeColors();
   usePageTitle("Payment Result");
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -89,13 +91,14 @@ export default function PaymentResultPage() {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column" }}>
       {/* Navbar */}
-      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center" }}>
+      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <a href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none" }}>
           <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <GraduationCap size={20} color="#fff" strokeWidth={2} />
           </div>
           <span style={{ color:C.t1, fontWeight:900, fontSize:20, letterSpacing:"-0.5px" }}>Edu<span style={{ color:C.p }}>BD</span></span>
         </a>
+        <DarkModeToggle size="sm" />
       </nav>
 
       {/* Content */}

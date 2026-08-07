@@ -5,6 +5,7 @@ import { usePageTitle } from "@/lib/usePageTitle";
 import { Mail, GraduationCap, CheckCircle2, ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -15,6 +16,7 @@ const C = {
 };
 
 export default function ForgotPasswordPage() {
+  const C = useThemeColors();
   usePageTitle("Forgot Password");
   const [email,   setEmail]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,13 +39,14 @@ export default function ForgotPasswordPage() {
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column" }}>
-      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center" }}>
+      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <a href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none" }}>
           <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <GraduationCap size={20} color="#fff" strokeWidth={2} />
           </div>
           <span style={{ color:C.t1, fontWeight:900, fontSize:20 }}>Edu<span style={{ color:C.p }}>BD</span></span>
         </a>
+        <DarkModeToggle size="sm" />
       </nav>
 
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 20px" }}>

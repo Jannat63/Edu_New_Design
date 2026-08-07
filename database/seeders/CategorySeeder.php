@@ -19,6 +19,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Digital Marketing',  'slug' => 'digital-marketing',  'icon' => 'TrendingUp', 'color' => '#A855F7', 'sort_order' => 4],
             ['name' => 'English & IELTS',    'slug' => 'english-ielts',      'icon' => 'Globe',      'color' => '#F43F5E', 'sort_order' => 5],
             ['name' => 'Finance',            'slug' => 'finance',            'icon' => 'Lightbulb',  'color' => '#F59E0B', 'sort_order' => 6],
+            ['name' => 'Job Prep / BCS & Bank Jobs', 'slug' => 'job-prep-bcs-bank', 'icon' => 'Landmark', 'color' => '#6B2C39', 'sort_order' => 7],
         ];
 
         foreach ($cats as $cat) {

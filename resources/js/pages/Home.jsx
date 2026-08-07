@@ -11,9 +11,10 @@ import LiveSearch from "@/components/LiveSearch";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Search, BookOpen, Award, Users, Star, ChevronRight, ChevronDown,
-  Code, TrendingUp, Globe, Lightbulb, PenTool, BarChart2,
+  Code, TrendingUp, Globe, Lightbulb, PenTool, BarChart2, Landmark,
   Clock, Zap, Check, Play, GraduationCap, BadgeCheck,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ const MEGA_CATS = [
   { name:"Digital Marketing", ic:"#6B4A6E", bg:"#EFE4EF", count:120, icon:TrendingUp,  hot:["SEO Masterclass","Facebook & IG Ads","Content Marketing","Email Marketing"] },
   { name:"English & IELTS",   ic:"#2D6B6B", bg:"#DFEBEA", count:95,  icon:Globe,       hot:["IELTS 7.0+ Prep","Business English","Spoken English","Grammar Mastery"] },
   { name:"Finance",           ic:"#8A5A3D", bg:"#EDE1D6", count:85,  icon:Lightbulb,   hot:["Accounting & Tally","Excel for Finance","Investment Basics","Tax & VAT BD"] },
+  { name:"Job Prep / BCS & Bank Jobs", ic:"#6B2C39", bg:"#EFE0E3", count:70, icon:Landmark, hot:["BCS Preliminary Prep","Bank Job Written Exam","BCS Written & Viva","Bank Math & English"] },
 ];
 const MEGA_TOP = [
   { title:"Complete React & Next.js Bootcamp", ins:"Tanvir Ahmed",      r:4.9, price:"৳1,200", emoji:"⚛️" },
@@ -55,6 +57,7 @@ const CATS = [
   { name:"Digital Marketing", icon:TrendingUp, count:120, bg:"#EFE4EF", ic:"#6B4A6E" },
   { name:"English & IELTS",   icon:Globe,      count:95,  bg:"#DFEBEA", ic:"#2D6B6B" },
   { name:"Finance",           icon:Lightbulb,  count:85,  bg:"#EDE1D6", ic:"#8A5A3D" },
+  { name:"Job Prep / BCS & Bank Jobs", icon:Landmark, count:70, bg:"#EFE0E3", ic:"#6B2C39" },
 ];
 const DEFAULT_COURSES = [
   { id:1, title:"Complete React & Next.js Developer Bootcamp",   cat:"Web Dev",   catC:"#28305E", instructor:"Tanvir Ahmed",      av:"TA", rating:4.9, reviews:1240, price:1200, orig:2400, dur:"42h", students:"8.5K", level:"Intermediate", thumb:"linear-gradient(135deg,#232A54,#4B5390)", emoji:"⚛️" },
@@ -115,6 +118,7 @@ function SH({ eyebrow, title, center = false }) {
 
 // ── NAVBAR — MEGA MENU ────────────────────────────────────────────────────────
 function Navbar() {
+  const C = useThemeColors(); // shadows the file's light-only palette below for this component
   const [drop, setDrop] = useState(null); // "courses" | "blog" | "about" | null
 
   const NavBtn = ({ id, label }) => (
@@ -245,6 +249,7 @@ function Navbar() {
 
         {/* Auth */}
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </div>
@@ -730,6 +735,7 @@ function Footer() {
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
+  const C = useThemeColors();
   usePageTitle("Home");
   const [query, setQuery] = useState("");
   const [tab,   setTab]   = useState("All");

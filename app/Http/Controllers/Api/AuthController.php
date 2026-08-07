@@ -29,6 +29,7 @@ class AuthController extends Controller
             'phone'    => 'nullable|string|max:20',
             'city'     => 'nullable|string|max:100',
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
+            'ref'      => 'nullable|string|max:20',
         ]);
 
         $studentRole = Role::where('slug', 'student')->first();
@@ -41,6 +42,12 @@ class AuthController extends Controller
         // actually sent.
         $autoVerify = !app()->environment('production');
 
+        // Referral attribution (Phase 2 item 4) — best-effort: an unknown or
+        // missing code just means no referrer, never a registration failure.
+        $referrer = !empty($data['ref'])
+            ? User::where('referral_code', strtoupper($data['ref']))->first()
+            : null;
+
         $user = User::create([
             'role_id'  => $studentRole?->id ?? 2,
             'name'     => $data['name'],
@@ -49,7 +56,9 @@ class AuthController extends Controller
             'city'     => $data['city'] ?? null,
             'password' => Hash::make($data['password']),
             'email_verified_at' => $autoVerify ? now() : null,
+            'referred_by_user_id' => $referrer?->id,
         ]);
+        $user->ensureReferralCode();
 
         if (!$autoVerify) {
             $user->notify(new \App\Notifications\VerifyEmailNotification());

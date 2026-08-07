@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   HelpCircle, CheckCircle2, XCircle, Clock, GraduationCap,
   ChevronLeft, ChevronRight, Award, RefreshCw, AlertCircle,
@@ -24,14 +25,16 @@ function fmtTime(totalSeconds) {
 }
 
 function Navbar() {
+  const C = useThemeColors();
   return (
-    <div style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, height:60, display:"flex", alignItems:"center", padding:"0 24px" }}>
+    <div style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, height:60, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 24px" }}>
       <Link to="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none" }}>
         <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
           <GraduationCap size={17} color="#fff" />
         </div>
         <span style={{ color:C.t1, fontWeight:900, fontSize:18 }}>Edu<span style={{ color:C.p }}>BD</span></span>
       </Link>
+      <DarkModeToggle size="sm" />
     </div>
   );
 }
@@ -150,6 +153,7 @@ function ResultScreen({ result, onRetry, courseSlug }) {
 }
 
 export default function Quiz() {
+  const C = useThemeColors();
   const { id } = useParams();
 
   const [quiz,        setQuiz]        = useState(null);

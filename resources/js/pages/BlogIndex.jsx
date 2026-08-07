@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { api } from "@/lib/api";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -18,6 +19,7 @@ const SAMPLE_POSTS = [
 ];
 
 export default function BlogIndexPage() {
+  const C = useThemeColors();
   usePageTitle("Blog");
 
   const [posts,   setPosts]   = useState(SAMPLE_POSTS);
@@ -48,9 +50,10 @@ export default function BlogIndexPage() {
             Edu<span style={{ color:C.p }}>BD</span>
           </span>
         </Link>
-        <div style={{ display:"flex", gap:6 }}>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/courses" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Courses</Link>
           <Link to="/blog" style={{ color:C.p, fontSize:14, fontWeight:700, padding:"7px 12px", borderRadius:8, textDecoration:"none", background:C.pLt }}>Blog</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

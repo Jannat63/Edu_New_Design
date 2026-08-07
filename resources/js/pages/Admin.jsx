@@ -10,7 +10,7 @@ import {
   Tag, Globe, Landmark, Upload, User, Lock, Phone, MapPin, AlignLeft,
   ChevronDown, ChevronUp, RefreshCw, ExternalLink, Layers, Layout,
   MessageSquare, HelpCircle, FileCode, Share2, Megaphone, Link, Move,
-  DollarSign,
+  DollarSign, Wallet, Gift,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import CurriculumModal from "@/components/CurriculumModal";
@@ -37,6 +37,8 @@ const NAV = [
   { id:"payments",         label:"Payments",          icon:CreditCard      },
   { id:"blog",             label:"Blog",              icon:FileText        },
   { id:"payment-methods",  label:"Payment Methods",   icon:Landmark        },
+  { id:"payouts",          label:"Instructor Payouts",icon:Wallet          },
+  { id:"referral-payouts", label:"Referral Payouts",  icon:Gift            },
   { id:"notifications",    label:"Notifications",     icon:Bell            },
   { id:"menu",             label:"Mega Menu",         icon:Layers          },
   { id:"cms",              label:"Website Content",   icon:Globe           },
@@ -1521,6 +1523,7 @@ export default function Admin() {
     if(active==="coupons")         return <CouponsPage/>;
     if(active==="bundles")         return <BundlesPage/>;
     if(active==="payouts")         return <PayoutsPage/>;
+    if(active==="referral-payouts")return <ReferralPayoutsPage/>;
     if(active==="settings")        return <SettingsPage/>;
   };
 
@@ -1689,6 +1692,81 @@ function PayoutsPage() {
           );
         })}
         {!loading&&payouts.length===0&&<p style={{textAlign:"center",padding:30,color:C.t3}}>No payout requests yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+function ReferralPayoutsPage() {
+  const [payouts,setPayouts]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [rate,setRate]=useState("");
+  const [savingRate,setSavingRate]=useState(false);
+  const load=()=>{ setLoading(true); api.get("/admin/referral-payouts").then(r=>setPayouts(r||[])).catch(()=>{}).finally(()=>setLoading(false)); };
+  useEffect(()=>{
+    load();
+    api.get("/admin/settings/referral").then(r=>{
+      const s=(r||[]).find(x=>x.key==="referral_commission_percent");
+      if(s) setRate(String(s.value));
+    }).catch(()=>{});
+  },[]);
+  const handleUpdate=async(id,status)=>{
+    try { await api.put(`/admin/referral-payouts/${id}`,{status}); load(); toast.success("Payout updated."); }
+    catch(e){ toast.error(e.message||"Failed."); }
+  };
+  const saveRate=async()=>{
+    setSavingRate(true);
+    try {
+      await api.put("/admin/settings",{settings:{referral_commission_percent:Number(rate)}});
+      toast.success("Commission rate updated.");
+    } catch(e){ toast.error(e.message||"Failed."); }
+    finally{ setSavingRate(false); }
+  };
+  const statusColors={pending:[C.y,C.yLt],processing:[C.p,C.pLt],paid:[C.g,C.gLt],rejected:[C.r,C.rLt]};
+  return (
+    <div>
+      <div style={{background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:18,padding:"18px 22px",marginBottom:18,display:"flex",alignItems:"flex-end",gap:12}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",display:"block",marginBottom:6}}>Commission rate</label>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <input type="number" min={0} max={100} value={rate} onChange={e=>setRate(e.target.value)}
+              style={{width:80,padding:"8px 10px",borderRadius:9,border:`1.5px solid ${C.bd}`,fontSize:14,color:C.t1}}/>
+            <span style={{fontSize:14,color:C.t2}}>%</span>
+          </div>
+        </div>
+        <button onClick={saveRate} disabled={savingRate||rate===""}
+          style={{padding:"9px 18px",borderRadius:9,border:"none",background:C.p,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+          {savingRate?"Saving…":"Save rate"}
+        </button>
+        <p style={{fontSize:12,color:C.t3,margin:0,flex:1}}>Applies to new purchases going forward — past commissions keep the rate they were earned at.</p>
+      </div>
+
+      <p style={{fontSize:13,color:C.t3,margin:"0 0 14px"}}>Commission payout requests from the referral program — separate pool of money from instructor course earnings above.</p>
+      {loading&&<p style={{textAlign:"center",color:C.t3}}>Loading…</p>}
+      <div style={{background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:18,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr",gap:8,padding:"10px 20px",background:C.bg,fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase"}}>
+          <span>Referrer</span><span>Amount</span><span>Method</span><span>Account</span><span>Status</span><span>Actions</span>
+        </div>
+        {payouts.map(p=>{
+          const [sc,sbg]=statusColors[p.status]||[C.t3,C.bg];
+          return (
+            <div key={p.id} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr",gap:8,padding:"13px 20px",borderTop:`1px solid ${C.bd}`,alignItems:"center",fontSize:13}}>
+              <div>
+                <div style={{fontWeight:600,color:C.t1}}>{p.user?.name}</div>
+                <div style={{fontSize:11,color:C.t3}}>{p.created_at}</div>
+              </div>
+              <span style={{fontWeight:800,color:C.t1}}>৳{(p.amount||0).toLocaleString()}</span>
+              <span style={{textTransform:"capitalize",color:C.t2}}>{p.method}</span>
+              <span style={{fontSize:11,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.account_number}</span>
+              <span style={{display:"inline-flex",fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:100,background:sbg,color:sc}}>{p.status}</span>
+              <div style={{display:"flex",gap:5}}>
+                {p.status==="pending"&&<button onClick={()=>handleUpdate(p.id,"paid")} style={{fontSize:11,padding:"5px 10px",borderRadius:7,border:"none",background:C.gLt,color:C.g,fontWeight:700,cursor:"pointer"}}>Mark Paid</button>}
+                {p.status==="pending"&&<button onClick={()=>handleUpdate(p.id,"rejected")} style={{fontSize:11,padding:"5px 10px",borderRadius:7,border:"none",background:C.rLt,color:C.r,fontWeight:700,cursor:"pointer"}}>Reject</button>}
+              </div>
+            </div>
+          );
+        })}
+        {!loading&&payouts.length===0&&<p style={{textAlign:"center",padding:30,color:C.t3}}>No referral payout requests yet.</p>}
       </div>
     </div>
   );

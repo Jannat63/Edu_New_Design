@@ -4,6 +4,7 @@ import AuthNavActions from "@/components/AuthNavActions";
 import { useSiteContent } from "@/lib/useSiteContent";
 import { renderContentBlocks } from "@/lib/renderContentBlocks";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E",
@@ -12,6 +13,7 @@ const C = {
 };
 
 export default function PrivacyPage() {
+  const C = useThemeColors();
   usePageTitle("Privacy Policy");
   const { data: cms, loading } = useSiteContent('legal');
 
@@ -25,8 +27,9 @@ export default function PrivacyPage() {
           </div>
           <span style={{ fontFamily:"'Fraunces',serif", color:C.t1, fontWeight:600, fontSize:21, letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a, fontStyle:"italic", fontWeight:500 }}>BD</span></span>
         </Link>
-        <div style={{ display:"flex", gap:6 }}>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/terms" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Terms & Conditions</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

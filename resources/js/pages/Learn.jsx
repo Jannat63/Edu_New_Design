@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import DiscussionBoard from "@/components/DiscussionBoard";
+import DoubtAssistant from "@/components/DoubtAssistant";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "@/lib/toast";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
@@ -563,6 +564,9 @@ export default function Learn() {
 
         <Sidebar sections={sections} currentId={currentLessonId} onSelect={selectLesson} completed={completed} open={sidebarOpen}/>
       </div>
+      {isEnrolled && lesson && !lessonLoading && (
+        <DoubtAssistant lessonId={currentLessonId} lessonTitle={lesson.title} />
+      )}
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );

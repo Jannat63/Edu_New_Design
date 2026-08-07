@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import AuthNavActions from "@/components/AuthNavActions";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Clock, Eye, Share2, Facebook, Twitter, Linkedin, Link2,
   ChevronRight, BookOpen, Star, Users, Award, Tag,
@@ -46,6 +47,7 @@ const RELATED = [
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 function Navbar() {
+  const C = useThemeColors();
   return (
     <nav style={{ position:"sticky", top:0, zIndex:100, background:C.w, borderBottom:`1px solid ${C.bd}` }}>
       <div style={{ display:"flex", alignItems:"center", height:64, gap:24, maxWidth:1280, margin:"0 auto", padding:"0 clamp(20px,4vw,40px)" }}>
@@ -57,6 +59,7 @@ function Navbar() {
         </Link>
         <div style={{ flex:1 }} />
         <Link to="/blog" style={{ color:C.t2, fontSize:14, fontWeight:500, textDecoration:"none", padding:"7px 13px" }}>← All articles</Link>
+        <DarkModeToggle size="sm" />
         <AuthNavActions />
       </div>
     </nav>
@@ -332,6 +335,7 @@ function Footer() {
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
+  const C = useThemeColors();
   const { slug } = useParams();
 
   // ── All hooks declared up-front, in a fixed order, before any effects ──────

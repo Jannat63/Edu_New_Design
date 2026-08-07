@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Eye, EyeOff, Mail, Lock, User, Phone, Check,
   GraduationCap, Star, AlertCircle, CheckCircle2, ArrowRight,
@@ -293,6 +293,8 @@ function LoginForm({ onSwitch }) {
 // ── REGISTER FORM ─────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitch }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const ref = searchParams.get("ref");
   const { register } = useAuth();
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
@@ -317,7 +319,7 @@ function RegisterForm({ onSwitch }) {
     setApiError("");
     setLoading(true);
     try {
-      await register({ name, email, phone: `+880${phone}`, password, password_confirmation: confirm });
+      await register({ name, email, phone: `+880${phone}`, password, password_confirmation: confirm, ref: ref || undefined });
       setSuccess(true);
       toast.success("Account created! Welcome to EduBD 🎉");
       setTimeout(() => navigate("/dashboard"), 1500);

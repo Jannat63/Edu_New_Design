@@ -3,6 +3,7 @@ import { usePageTitle } from "@/lib/usePageTitle";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Lock, Eye, EyeOff, GraduationCap, CheckCircle2, AlertCircle } from "lucide-react";
 import { api } from "../lib/api";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pDk:"#1A2044", pLt:"#E8E9F1",
@@ -13,6 +14,7 @@ const C = {
 };
 
 export default function ResetPasswordPage() {
+  const C = useThemeColors();
   usePageTitle("Reset Password");
   const [searchParams]          = useSearchParams();
   const navigate                = useNavigate();
@@ -62,7 +64,7 @@ export default function ResetPasswordPage() {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column" }}>
       {/* Navbar */}
-      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center" }}>
+      <nav style={{ background:C.w, borderBottom:`1px solid ${C.bd}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <a href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none" }}>
           <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <GraduationCap size={20} color="#fff" strokeWidth={2} />
@@ -71,6 +73,7 @@ export default function ResetPasswordPage() {
             Edu<span style={{ color:C.p }}>BD</span>
           </span>
         </a>
+        <DarkModeToggle size="sm" />
       </nav>
 
       {/* Content */}

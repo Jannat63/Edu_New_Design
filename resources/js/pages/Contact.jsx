@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { toast } from "@/lib/toast";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -12,6 +13,7 @@ const C = {
 };
 
 export default function ContactPage() {
+  const C = useThemeColors();
   usePageTitle("Contact Us");
 
   const [name,    setName]    = useState("");
@@ -40,8 +42,9 @@ export default function ContactPage() {
           </div>
           <span style={{ color:C.t1, fontWeight:900, fontSize:20, letterSpacing:"-0.5px" }}>Edu<span style={{ color:C.p }}>BD</span></span>
         </Link>
-        <div style={{ display:"flex", gap:6 }}>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/courses" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Courses</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

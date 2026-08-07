@@ -6,7 +6,7 @@ import {
   Bell, Star, Clock, ChevronRight, Play, Download,
   CheckCircle2, GraduationCap, LogOut,
   BarChart2, BadgeCheck, Menu, X, Target, Upload,
-  RefreshCw, ExternalLink, AlertCircle, Camera,
+  RefreshCw, ExternalLink, AlertCircle, Camera, Gift,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -30,6 +30,7 @@ const NAV = [
   { id:"payments",     label:"Payments",     icon:CreditCard      },
   { id:"wishlist",     label:"Wishlist",      icon:BookOpen        },
   { id:"analytics",    label:"Analytics",     icon:BarChart2       },
+  { id:"referrals",    label:"Refer & Earn",  icon:Gift, href:"/referrals" },
   { id:"profile",      label:"Profile",       icon:User            },
 ];
 
@@ -95,6 +96,15 @@ function Sidebar({ active, setActive, open, setOpen, onLogout, user }) {
         <nav style={{padding:"12px 12px",flex:1,overflowY:"auto"}}>
           <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.25)",textTransform:"uppercase",letterSpacing:".1em",padding:"4px 10px 8px"}}>Main menu</div>
           {NAV.map(n=>(
+            n.href ? (
+              <Link key={n.id} to={n.href}
+                style={{width:"100%",display:"flex",alignItems:"center",gap:11,padding:"11px 12px",borderRadius:11,cursor:"pointer",textAlign:"left",marginBottom:3,transition:"all .15s",background:"transparent",borderLeft:"3px solid transparent",textDecoration:"none",boxSizing:"border-box"}}
+                onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.05)";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
+                <n.icon size={16} color="rgba(255,255,255,.4)"/>
+                <span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,.5)"}}>{n.label}</span>
+              </Link>
+            ) : (
             <button key={n.id} onClick={()=>setActive(n.id)}
               style={{width:"100%",display:"flex",alignItems:"center",gap:11,padding:"11px 12px",borderRadius:11,border:"none",cursor:"pointer",textAlign:"left",marginBottom:3,transition:"all .15s",background:active===n.id?"rgba(79,70,229,.25)":"transparent",borderLeft:active===n.id?`3px solid ${C.p}`:"3px solid transparent"}}
               onMouseEnter={e=>{if(active!==n.id)e.currentTarget.style.background="rgba(255,255,255,.05)";}}
@@ -102,6 +112,7 @@ function Sidebar({ active, setActive, open, setOpen, onLogout, user }) {
               <n.icon size={16} color={active===n.id?C.pMd:"rgba(255,255,255,.4)"}/>
               <span style={{fontSize:13,fontWeight:active===n.id?700:500,color:active===n.id?"#fff":"rgba(255,255,255,.5)"}}>{n.label}</span>
             </button>
+            )
           ))}
         </nav>
 

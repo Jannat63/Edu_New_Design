@@ -60,4 +60,13 @@ return [
         'is_sandboxed'   => env('SSLCZ_IS_SANDBOXED', true),
     ],
 
+    // ── Anthropic (AI doubt-solving assistant, Phase 2 item 3) ──────────────
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        // claude-sonnet-5 by default — good reasoning quality for tutoring.
+        // Swap to claude-haiku-4-5-20251001 for lower per-message cost if
+        // volume gets high; see AnthropicDoubtAssistant for where it's used.
+        'model'   => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+    ],
+
 ];

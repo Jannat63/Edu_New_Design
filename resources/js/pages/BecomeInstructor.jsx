@@ -2,6 +2,7 @@ import { GraduationCap, DollarSign, Users, Clock, CheckCircle2 } from "lucide-re
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -24,6 +25,7 @@ const STEPS = [
 ];
 
 export default function BecomeInstructorPage() {
+  const C = useThemeColors();
   usePageTitle("Become an Instructor");
 
   return (
@@ -38,6 +40,7 @@ export default function BecomeInstructorPage() {
         </Link>
         <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/courses" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Courses</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>

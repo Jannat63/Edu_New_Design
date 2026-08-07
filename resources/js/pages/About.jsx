@@ -5,6 +5,7 @@ import AuthNavActions from "@/components/AuthNavActions";
 import { useSiteContent } from '@/lib/useSiteContent';
 import { renderContentBlocks } from '@/lib/renderContentBlocks';
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
   p:"#28305E", pLt:"#E8E9F1",
@@ -20,6 +21,7 @@ const STATS = [
 ];
 
 export default function AboutPage() {
+  const C = useThemeColors();
   usePageTitle("About Us");
   const { data: cms } = useSiteContent('about');
 
@@ -33,8 +35,9 @@ export default function AboutPage() {
           </div>
           <span style={{ fontFamily:"'Fraunces',serif", color:C.t1, fontWeight:600, fontSize:21, letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a, fontStyle:"italic", fontWeight:500 }}>BD</span></span>
         </Link>
-        <div style={{ display:"flex", gap:6 }}>
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
           <Link to="/courses" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}>Courses</Link>
+          <DarkModeToggle size="sm" />
           <AuthNavActions />
         </div>
       </nav>
