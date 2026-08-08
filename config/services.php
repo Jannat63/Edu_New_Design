@@ -69,4 +69,11 @@ return [
         'model'   => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
     ],
 
+    // ── Bunny Stream (video upload/hosting, Phase 3 item 7) ──────────────────
+    'bunny' => [
+        'api_key'      => env('BUNNY_API_KEY'),      // the Stream Video Library's own API key, not the main account key
+        'library_id'   => env('BUNNY_LIBRARY_ID'),
+        'cdn_hostname' => env('BUNNY_CDN_HOSTNAME'), // the pull zone hostname, used for thumbnail urls
+    ],
+
 ];

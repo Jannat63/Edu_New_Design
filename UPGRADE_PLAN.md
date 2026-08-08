@@ -189,17 +189,38 @@ engineering cost" implies — see notes under each. Verified via `npm run build`
    biggest lift — real-time video conferencing integration, scheduling, live chat/polls.
    This is a different product surface, not an incremental feature.
 7. **Self-hosted video (move off YouTube embeds).** `Learn.jsx` currently plays lessons
-   via YouTube embed (see `getYouTubeId()`). That's free and simple, but it structurally
-   blocks offline downloads and shows YouTube's own ads/related-video distractions on a
-   paid product. This is the real prerequisite for item 8, and it's a genuine
-   infrastructure and cost decision (S3 storage + transcoding + CDN/streaming), not a
-   quick add.
+   via YouTube embed (see `getYouTubeId()`). ✅ **Done, 2026-08-07 — reframed on
+   investigation**: the "YouTube embed" premise was wrong — VideoPlayer already
+   supported direct video files, and zero seeded lessons had any video_url at all,
+   YouTube or otherwise. There was also no UI anywhere for an instructor to attach a
+   video. Built: Bunny Stream integration (`BunnyStreamService`), instructor-facing
+   direct browser-to-Bunny upload via TUS resumable protocol (bypasses PHP upload
+   limits entirely — course videos run hundreds of MB to a few GB), status polling
+   that auto-fills `video_url` once Bunny finishes transcoding, and a Bunny iframe
+   playback path in `VideoPlayer` (avoids needing hls.js for cross-browser HLS
+   support — same tradeoff YouTube already had: no progress-tracking through an
+   iframe, a real known gap, not fixed here). TUS signature order verified against
+   Bunny's current docs directly (not just training knowledge). Found and fixed in
+   passing: deleting a lesson never actually cleaned up its remote video — was
+   leaking Bunny storage costs indefinitely. **Needs your action**: `BUNNY_API_KEY`
+   + `BUNNY_LIBRARY_ID` + `BUNNY_CDN_HOSTNAME` in `.env` (Stream Video Library's own
+   key, not the main account key) — without them the upload button shows a clear
+   "not configured" message and the existing manual URL-paste field still works.
+   **Not tested against a real Bunny account** — no credentials available in this
+   environment; the one lowest-confidence detail (TUS signature byte order) is now
+   confirmed correct against Bunny's docs, so a first real upload attempt is the
+   actual test.
 8. **Offline download of lessons.** Explicitly marketed by 10 Minute School and maps
    directly to real Bangladesh mobile-data cost/reliability concerns — this isn't just
    trend-chasing, it's locally load-bearing. Depends on #7 being done first; not
-   realistically achievable on top of YouTube-embedded video.
+   realistically achievable on top of YouTube-embedded video. *Now unblocked by item 7
+   above, with a wrinkle worth knowing: Bunny serves HLS (many small segment files),
+   which is meaningfully harder to cache for offline playback than a single MP4 file
+   would be — worth scoping as its own conversation, not assumed to be a quick add
+   just because item 7 is done.*
 9. **Native mobile app.** The API already exists, so this isn't starting from zero, but
-   it's still a separate build (React Native or similar), not a design tweak.
+   it's still a separate build (React Native or similar), not a design tweak. Not
+   something buildable inside this repo/session — a real separate project.
 
 ### Explicitly deprioritized (found in research, not recommended)
 

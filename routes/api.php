@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\DoubtController;
 use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\Api\LessonVideoController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\CertificateController;
@@ -258,6 +259,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/sections/{id}/lessons/reorder',       [CourseCurriculumController::class, 'reorderLessons']);
         Route::put('/lessons/{id}',                         [CourseCurriculumController::class, 'updateLesson']);
         Route::delete('/lessons/{id}',                      [CourseCurriculumController::class, 'destroyLesson']);
+        Route::post('/lessons/{id}/video/init',              [LessonVideoController::class, 'init']);
+        Route::get('/lessons/{id}/video/status',             [LessonVideoController::class, 'status']);
 
         // Quiz authoring (admin + instructor via gate inside controller)
         Route::get('/quizzes/{id}',                         [QuizManagementController::class, 'show']);
@@ -358,6 +361,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/sections/{id}/lessons/reorder',       [CourseCurriculumController::class, 'reorderLessons']);
         Route::put('/lessons/{id}',                         [CourseCurriculumController::class, 'updateLesson']);
         Route::delete('/lessons/{id}',                      [CourseCurriculumController::class, 'destroyLesson']);
+        Route::post('/lessons/{id}/video/init',              [LessonVideoController::class, 'init']);
+        Route::get('/lessons/{id}/video/status',             [LessonVideoController::class, 'status']);
 
         // Quiz authoring
         Route::get('/quizzes/{id}',                         [QuizManagementController::class, 'show']);

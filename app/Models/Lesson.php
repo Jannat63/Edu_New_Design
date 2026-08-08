@@ -9,6 +9,7 @@ class Lesson extends Model
     protected $fillable = [
         'section_id', 'course_id', 'title', 'type',
         'video_url', 'video_thumbnail', 'duration_seconds',
+        'video_provider_id', 'video_status',
         'content', 'resources', 'is_preview', 'available_at', 'sort_order',
     ];
 

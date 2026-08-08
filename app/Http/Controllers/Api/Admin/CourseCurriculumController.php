@@ -7,11 +7,14 @@ use App\Models\Course;
 use App\Models\Section;
 use App\Models\Lesson;
 use App\Models\Assignment;
+use App\Services\BunnyStreamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class CourseCurriculumController extends Controller
 {
+    public function __construct(private BunnyStreamService $bunny) {}
+
     // ── GET CURRICULUM ────────────────────────────────────────────────────────
 
     /** GET /api/v1/admin/courses/{id}/curriculum  or  /instructor/courses/{id}/curriculum */
@@ -259,6 +262,16 @@ class CourseCurriculumController extends Controller
             foreach ($lesson->assignment->submissions as $sub) {
                 if ($sub->file_path) Storage::disk('public')->delete($sub->file_path);
             }
+        }
+
+        // Clean up the remote Bunny Stream video, if this lesson had one —
+        // this comment used to describe behavior that didn't actually exist
+        // (see UPGRADE_PLAN.md Phase 3 item 7); fixed alongside adding the
+        // upload feature itself, since a deleted lesson leaking an
+        // indefinitely-billed remote video is the kind of thing that's easy
+        // to not notice until a Bunny invoice is much bigger than expected.
+        if ($lesson->video_provider_id) {
+            $this->bunny->deleteVideo($lesson->video_provider_id);
         }
     }
 

@@ -32,6 +32,13 @@ function getYouTubeId(url) {
 }
 function isYouTube(url) { return !!(getYouTubeId(url)); }
 
+// Bunny Stream videos are stored as their iframe embed URL (see
+// BunnyStreamService::playbackUrl and its comment for why — short version:
+// avoids needing hls.js for cross-browser HLS playback). Detected the same
+// way YouTube is: check the URL shape, then render via iframe below instead
+// of the custom <video> player.
+function isBunnyEmbed(url) { return !!url && /iframe\.mediadelivery\.net\/embed\//.test(url); }
+
 function LessonIcon({ type, size=13 }) {
   if (type==="video")      return <Play      size={size} color={C.p} fill={C.p}/>;
   if (type==="quiz")       return <HelpCircle size={size} color={C.a}/>;
@@ -65,6 +72,24 @@ function VideoPlayer({ url, onProgress, onComplete, lessonId }) {
           style={{position:"absolute",inset:0,width:"100%",height:"100%",border:"none"}}
           src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="Lesson video"
+        />
+      </div>
+    );
+  }
+
+  // For Bunny Stream — also iframe, same reasoning as YouTube above (see
+  // isBunnyEmbed). Known gap, shared with the YouTube path: no onProgress/
+  // onComplete wiring through an iframe, so completion tracking doesn't fire
+  // for either video source today — see UPGRADE_PLAN.md Phase 3 item 7.
+  if (isBunnyEmbed(url)) {
+    return (
+      <div style={{position:"relative",paddingTop:"56.25%",background:"#000",borderRadius:0}}>
+        <iframe
+          style={{position:"absolute",inset:0,width:"100%",height:"100%",border:"none"}}
+          src={url}
+          allow="accelerometer; gyroscope; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
           title="Lesson video"
         />

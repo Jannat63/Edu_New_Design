@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X, Plus, Edit, Trash2, ChevronDown, ChevronRight, Play,
   FileText, HelpCircle, BookOpen, Download, Save, RefreshCw,
-  Link as LinkIcon, Upload, CheckCircle2, Video,
+  Link as LinkIcon, Upload as UploadIcon, CheckCircle2, Video, AlertCircle,
 } from "lucide-react";
+import { Upload as TusUpload } from "tus-js-client";
 import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
 
@@ -60,6 +61,153 @@ function Field({ label, value, onChange, type="text", placeholder="", rows, requ
             style={style} onFocus={focus} onBlur={blur}/>
       }
       {hint&&<div style={{fontSize:11,color:C.t3,marginTop:4}}>{hint}</div>}
+    </div>
+  );
+}
+
+// ── VIDEO UPLOAD (Phase 3 item 7) ───────────────────────────────────────────
+// Uploads straight from the browser to Bunny Stream via TUS (see
+// BunnyStreamService for why) — this component only ever talks to two small
+// JSON endpoints plus the TUS protocol, never proxies the file itself.
+// Only usable once the lesson has been saved at least once (needs a real
+// lessonId to attach the video to) — LessonForm only renders this when
+// editing an existing lesson.
+function VideoUploadField({ lessonId, apiPrefix, onUploaded }) {
+  const [state, setState] = useState("idle"); // idle | uploading | processing | ready | error
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const pollRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (pollRef.current) clearInterval(pollRef.current);
+  }, []);
+
+  function pollStatus() {
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await api.get(`${apiPrefix}/lessons/${lessonId}/video/status`);
+        if (!mountedRef.current) return;
+        if (r.status === "ready") {
+          clearInterval(pollRef.current);
+          setState("ready");
+          onUploaded(r.video_url);
+        } else if (r.status === "error") {
+          clearInterval(pollRef.current);
+          setState("error");
+          setError(r.message || "Bunny reported a processing error.");
+        }
+        // else still "processing" — keep polling
+      } catch {
+        // one failed status check is transient (network blip) — keep polling
+        // rather than giving up, since the upload itself already succeeded
+      }
+    }, 4000);
+  }
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // lets the same file be re-selected later if needed
+    if (!file) return;
+
+    setState("uploading");
+    setProgress(0);
+    setError(null);
+
+    let creds;
+    try {
+      creds = await api.post(`${apiPrefix}/lessons/${lessonId}/video/init`, {});
+    } catch (err) {
+      setState("error");
+      setError(err.message || "Could not start the upload.");
+      return;
+    }
+
+    const upload = new TusUpload(file, {
+      endpoint: creds.endpoint,
+      // Matches Bunny's documented retry schedule — longer backoff spread
+      // gives a flaky connection more room to recover before giving up.
+      retryDelays: [0, 3000, 5000, 10000, 20000, 60000, 60000],
+      headers: {
+        AuthorizationSignature: creds.signature,
+        AuthorizationExpire: String(creds.expire),
+        VideoId: creds.video_guid,
+        LibraryId: String(creds.library_id),
+      },
+      metadata: { filetype: file.type, title: file.name },
+      onError: (err) => {
+        if (!mountedRef.current) return;
+        setState("error");
+        setError("Upload failed: " + err.message);
+      },
+      onProgress: (bytesUploaded, bytesTotal) => {
+        if (!mountedRef.current) return;
+        setProgress(Math.round((bytesUploaded / bytesTotal) * 100));
+      },
+      onSuccess: () => {
+        if (!mountedRef.current) return;
+        setState("processing");
+        pollStatus();
+      },
+    });
+
+    // TUS's actual point is resuming an interrupted upload instead of
+    // restarting a possibly-huge file from byte zero — findPreviousUploads
+    // checks the browser's local storage for a matching incomplete upload
+    // of this exact file before starting a new one.
+    const previous = await upload.findPreviousUploads();
+    if (previous.length) {
+      upload.resumeFromPreviousUpload(previous[0]);
+    }
+    upload.start();
+  }
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ display:"block", fontSize:12, fontWeight:600, color:C.t1, marginBottom:6 }}>
+        Or upload a video file
+      </label>
+      <div style={{ border:`1.5px dashed ${C.bd}`, borderRadius:10, padding:"14px 16px", background:C.w }}>
+        {state === "idle" && (
+          <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:12.5, color:C.p, fontWeight:600 }}>
+            <UploadIcon size={15} />
+            Choose a video file to upload
+            <input type="file" accept="video/*" onChange={handleFile} style={{ display:"none" }} />
+          </label>
+        )}
+        {state === "uploading" && (
+          <div>
+            <div style={{ fontSize:12.5, color:C.t2, marginBottom:6 }}>Uploading… {progress}%</div>
+            <div style={{ height:6, background:C.bg, borderRadius:4, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${progress}%`, background:C.p, transition:"width .2s" }} />
+            </div>
+          </div>
+        )}
+        {state === "processing" && (
+          <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, color:C.t2 }}>
+            <RefreshCw size={14} className="spin" style={{ animation:"cm-spin 1s linear infinite" }} />
+            Uploaded — Bunny is processing the video now. This can take a few minutes for longer videos; feel free to save the lesson and check back.
+          </div>
+        )}
+        {state === "ready" && (
+          <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, color:C.g, fontWeight:600 }}>
+            <CheckCircle2 size={15} /> Video ready — URL filled in below.
+          </div>
+        )}
+        {state === "error" && (
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, color:C.r, fontWeight:600, marginBottom:8 }}>
+              <AlertCircle size={15} /> {error}
+            </div>
+            <label style={{ display:"inline-flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:12, color:C.p, fontWeight:600 }}>
+              <UploadIcon size={13} /> Try again
+              <input type="file" accept="video/*" onChange={handleFile} style={{ display:"none" }} />
+            </label>
+          </div>
+        )}
+      </div>
+      <style>{`@keyframes cm-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -155,9 +303,18 @@ function LessonForm({ initial, sectionId, onSaved, onCancel, apiPrefix }) {
 
       {form.type==="video"&&(
         <>
+          {editing && (
+            <VideoUploadField
+              lessonId={initial.id}
+              apiPrefix={apiPrefix}
+              onUploaded={(url) => set("video_url", url)}
+            />
+          )}
           <Field label="Video URL" value={form.video_url} onChange={v=>set("video_url",v)} required
             placeholder="https://youtube.com/watch?v=… or https://…/video.mp4"
-            hint="Paste a YouTube link or a direct MP4/video file URL"/>
+            hint={editing
+              ? "Filled in automatically once your upload above finishes, or paste a YouTube/direct video link yourself"
+              : "Paste a YouTube link or a direct video URL — save the lesson once, then you can upload a file directly instead"}/>
           <Field label="Duration (seconds)" value={form.duration_seconds} onChange={v=>set("duration_seconds",v)}
             type="number" placeholder="e.g. 1800 for 30 minutes"/>
         </>
