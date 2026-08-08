@@ -180,8 +180,15 @@ engineering cost" implies — see notes under each. Verified via `npm run build`
    not what's wanted. No fraud detection — a user can create a second account and
    refer themselves; this is a known, accepted limitation of simple referral systems,
    not something this build attempts to solve.
-5. **Basic gamification** — completion streaks, badges. Well-understood pattern,
-   moderate engineering effort, meaningful engagement lift.
+5. **Basic gamification** — completion streaks, badges. ✅ Done, 2026-08-08.
+   `GamificationService::recordActivity()` hooks into `LessonController::completeLesson()`,
+   inside the existing `if (!$progress->is_completed)` guard so re-completing a lesson
+   can't inflate a streak. Streak logic: same-day = no-op, consecutive day = +1, gap = reset
+   to 1. 8 starter badges seeded (`BadgeSeeder`) across lessons/streak/courses-completed
+   milestones — extendable by adding rows, no code changes needed for new badge
+   thresholds within the existing three criteria types. Compact widget on the student
+   dashboard (streak counter + badge strip). Kept intentionally light — no new page/route,
+   given items 3/4/7 already established the pattern and this needed less surface area.
 
 ### Phase 3 — Major infrastructure investments (real scope, not feature flags)
 

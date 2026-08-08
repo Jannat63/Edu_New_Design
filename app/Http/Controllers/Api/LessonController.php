@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Enrollment;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class LessonController extends Controller
@@ -73,7 +74,7 @@ class LessonController extends Controller
             && $data['position_seconds'] >= $lesson->duration_seconds * 0.9
             && !$progress->is_completed
         ) {
-            $this->completeLesson($progress, $user->id, $lesson->course_id);
+            $this->completeLesson($progress, $user, $lesson->course_id);
         }
 
         return response()->json(['message' => 'Progress saved.', 'is_completed' => (bool) $progress->fresh()->is_completed]);
@@ -92,7 +93,7 @@ class LessonController extends Controller
             ['course_id' => $lesson->course_id]
         );
 
-        $this->completeLesson($progress, $user->id, $lesson->course_id);
+        $this->completeLesson($progress, $user, $lesson->course_id);
 
         $enrollment = Enrollment::where('user_id', $user->id)->where('course_id', $lesson->course_id)->first();
 
@@ -121,13 +122,14 @@ class LessonController extends Controller
         abort_unless($enrolled, 403, 'You must enroll in this course first.');
     }
 
-    private function completeLesson(LessonProgress $progress, int $userId, int $courseId): void
+    private function completeLesson(LessonProgress $progress, User $user, int $courseId): void
     {
         if (!$progress->is_completed) {
             $progress->update(['is_completed' => true, 'completed_at' => now()]);
+            app(\App\Services\GamificationService::class)->recordActivity($user);
         }
 
-        $enrollment = Enrollment::where('user_id', $userId)->where('course_id', $courseId)->first();
+        $enrollment = Enrollment::where('user_id', $user->id)->where('course_id', $courseId)->first();
         $enrollment?->recalculateProgress();
     }
 }

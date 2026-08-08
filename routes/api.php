@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\DoubtController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\LessonVideoController;
+use App\Http\Controllers\Api\GamificationController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\CertificateController;
@@ -166,6 +167,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/payouts',      [ReferralController::class, 'myPayouts']);
         Route::post('/payouts',     [ReferralController::class, 'requestPayout']);
     });
+
+    // ── GAMIFICATION (Phase 2 item 5) — streaks + badges ──────────────────────
+    Route::middleware('auth:sanctum')->get('/gamification/me', [GamificationController::class, 'me']);
 
     // ── DISCUSSIONS ───────────────────────────────────────────────────────────
     Route::middleware('auth:sanctum')->group(function () {

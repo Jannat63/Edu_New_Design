@@ -7,7 +7,10 @@ import {
   CheckCircle2, GraduationCap, LogOut,
   BarChart2, BadgeCheck, Menu, X, Target, Upload,
   RefreshCw, ExternalLink, AlertCircle, Camera, Gift,
+  Flame, Trophy, Footprints, BookMarked,
 } from "lucide-react";
+
+const ICONS = { Flame, Trophy, Footprints, BookMarked, BookOpen, Award };
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "@/lib/toast";
@@ -144,6 +147,44 @@ function Topbar({ title, onMenu, user }) {
 }
 
 // ── DASHBOARD PAGE ─────────────────────────────────────────────────────────────
+function GamificationCard() {
+  const [data, setData] = useState(null);
+  useEffect(() => { api.get("/gamification/me").then(setData).catch(() => {}); }, []);
+  if (!data) return null;
+
+  return (
+    <div style={{background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:18,padding:"20px 22px",marginBottom:18,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:48,height:48,borderRadius:14,background:data.current_streak>0?"#FFF1E0":C.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <Flame size={24} color={data.current_streak>0?"#E8792A":C.t3} fill={data.current_streak>0?"#E8792A":"none"}/>
+        </div>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,color:C.t1,lineHeight:1.1}}>{data.current_streak} day{data.current_streak===1?"":"s"}</div>
+          <div style={{fontSize:11.5,color:C.t3}}>Current streak {data.longest_streak>data.current_streak?`· best ${data.longest_streak}`:""}</div>
+        </div>
+      </div>
+
+      <div style={{width:1,height:36,background:C.bd}}/>
+
+      <div style={{flex:1,minWidth:200}}>
+        <div style={{fontSize:11.5,color:C.t3,marginBottom:8}}>{data.badges_earned} of {data.badges_total} badges earned</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {data.badges.map(b=>{
+            const Icon = ICONS[b.icon] || Award;
+            return (
+              <div key={b.key} title={`${b.name} — ${b.description}`}
+                style={{width:34,height:34,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",
+                  background:b.earned?C.pLt:C.bg, opacity:b.earned?1:0.4}}>
+                <Icon size={16} color={b.earned?C.p:C.t3}/>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage({ stats, courses }) {
   const active = courses.filter(c=>c.progress<100);
   const done   = courses.filter(c=>c.progress>=100);
@@ -156,6 +197,8 @@ function DashboardPage({ stats, courses }) {
         <StatCard icon={CheckCircle2} label="Completed" value={done.length}                color={C.g} bg={C.gLt}/>
         <StatCard icon={Award}      label="Certificates" value={stats?.certs||done.length} color={C.y} bg={C.yLt}/>
       </div>
+
+      <GamificationCard />
 
       {active.length>0&&(
         <div style={{background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:18,padding:"20px 22px",marginBottom:18}}>
