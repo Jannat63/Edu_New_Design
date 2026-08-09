@@ -25,6 +25,8 @@ import Quiz                from './pages/Quiz';
 import Login              from './pages/Login';
 import Dashboard          from './pages/Dashboard';
 import Referrals          from './pages/Referrals';
+import LiveClasses        from './pages/LiveClasses';
+import Downloads          from './pages/Downloads';
 import InstructorDashboard from './pages/InstructorDashboard';
 import Admin              from './pages/Admin';
 import Instructor         from './pages/Instructor';
@@ -118,6 +120,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/payment-result"     element={<ProtectedRoute element={<PaymentResult />} />} />
                 <Route path="/dashboard"          element={<ProtectedRoute element={<Dashboard />} />} />
                 <Route path="/referrals"          element={<ProtectedRoute element={<Referrals />} />} />
+                <Route path="/live-classes"        element={<ProtectedRoute element={<LiveClasses />} />} />
+                <Route path="/downloads"          element={<ProtectedRoute element={<Downloads />} />} />
 
                 {/* Protected — instructor or admin */}
                 <Route path="/instructor-dashboard" element={<ProtectedRoute element={<InstructorDashboard />} role="instructor" />} />

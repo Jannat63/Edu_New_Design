@@ -76,4 +76,10 @@ return [
         'cdn_hostname' => env('BUNNY_CDN_HOSTNAME'), // the pull zone hostname, used for thumbnail urls
     ],
 
+    // ── Daily.co (live classes, Phase 3 item 6) ──────────────────────────────
+    'daily' => [
+        'api_key' => env('DAILY_API_KEY'),
+        'domain'  => env('DAILY_DOMAIN'), // your Daily subdomain, e.g. "edubd" for edubd.daily.co — dashboard → Developers
+    ],
+
 ];

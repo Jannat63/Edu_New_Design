@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DoubtController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\LessonVideoController;
 use App\Http\Controllers\Api\GamificationController;
+use App\Http\Controllers\Api\LiveClassController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\CertificateController;
@@ -171,6 +172,13 @@ Route::prefix('v1')->group(function () {
     // ── GAMIFICATION (Phase 2 item 5) — streaks + badges ──────────────────────
     Route::middleware('auth:sanctum')->get('/gamification/me', [GamificationController::class, 'me']);
 
+    // ── LIVE CLASSES (Phase 3 item 6) — join/list open to any enrolled user ──
+    Route::middleware('auth:sanctum')->prefix('live-classes')->group(function () {
+        Route::get('/upcoming',      [LiveClassController::class, 'upcoming']);
+        Route::post('/{id}/join',    [LiveClassController::class, 'join']);
+        Route::delete('/{id}',       [LiveClassController::class, 'destroy']);
+    });
+
     // ── DISCUSSIONS ───────────────────────────────────────────────────────────
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/courses/{id}/discussions',  [DiscussionController::class, 'index']);
@@ -265,6 +273,10 @@ Route::prefix('v1')->group(function () {
         Route::delete('/lessons/{id}',                      [CourseCurriculumController::class, 'destroyLesson']);
         Route::post('/lessons/{id}/video/init',              [LessonVideoController::class, 'init']);
         Route::get('/lessons/{id}/video/status',             [LessonVideoController::class, 'status']);
+
+        // Live classes (Phase 3 item 6)
+        Route::post('/courses/{courseId}/live-classes',      [LiveClassController::class, 'store']);
+        Route::get('/courses/{courseId}/live-classes',       [LiveClassController::class, 'index']);
 
         // Quiz authoring (admin + instructor via gate inside controller)
         Route::get('/quizzes/{id}',                         [QuizManagementController::class, 'show']);
@@ -367,6 +379,9 @@ Route::prefix('v1')->group(function () {
         Route::delete('/lessons/{id}',                      [CourseCurriculumController::class, 'destroyLesson']);
         Route::post('/lessons/{id}/video/init',              [LessonVideoController::class, 'init']);
         Route::get('/lessons/{id}/video/status',             [LessonVideoController::class, 'status']);
+
+        Route::post('/courses/{courseId}/live-classes',      [LiveClassController::class, 'store']);
+        Route::get('/courses/{courseId}/live-classes',       [LiveClassController::class, 'index']);
 
         // Quiz authoring
         Route::get('/quizzes/{id}',                         [QuizManagementController::class, 'show']);

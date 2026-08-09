@@ -7,7 +7,7 @@ import {
   CheckCircle2, GraduationCap, LogOut,
   BarChart2, BadgeCheck, Menu, X, Target, Upload,
   RefreshCw, ExternalLink, AlertCircle, Camera, Gift,
-  Flame, Trophy, Footprints, BookMarked,
+  Flame, Trophy, Footprints, BookMarked, Video, HardDriveDownload,
 } from "lucide-react";
 
 const ICONS = { Flame, Trophy, Footprints, BookMarked, BookOpen, Award };
@@ -34,6 +34,8 @@ const NAV = [
   { id:"wishlist",     label:"Wishlist",      icon:BookOpen        },
   { id:"analytics",    label:"Analytics",     icon:BarChart2       },
   { id:"referrals",    label:"Refer & Earn",  icon:Gift, href:"/referrals" },
+  { id:"live-classes", label:"Live Classes",  icon:Video, href:"/live-classes" },
+  { id:"downloads",    label:"Downloads",     icon:HardDriveDownload, href:"/downloads" },
   { id:"profile",      label:"Profile",       icon:User            },
 ];
 

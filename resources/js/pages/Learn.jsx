@@ -9,6 +9,7 @@ import {
 import { api } from "@/lib/api";
 import DiscussionBoard from "@/components/DiscussionBoard";
 import DoubtAssistant from "@/components/DoubtAssistant";
+import DownloadButton from "@/components/DownloadButton";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "@/lib/toast";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
@@ -543,7 +544,8 @@ export default function Learn() {
                 <div style={{background:C.w,borderTop:`1px solid ${C.bd}`,padding:"18px 28px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Current Lesson</div>
-                    <h2 style={{fontSize:17,fontWeight:800,color:C.t1,margin:0}}>{lesson.title}</h2>
+                    <h2 style={{fontSize:17,fontWeight:800,color:C.t1,margin:"0 0 8px"}}>{lesson.title}</h2>
+                    <DownloadButton lesson={lesson} courseTitle={course?.title} />
                   </div>
                   {!completed.has(currentLessonId)&&(
                     <button onClick={handleComplete}

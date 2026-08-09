@@ -192,9 +192,22 @@ engineering cost" implies — see notes under each. Verified via `npm run build`
 
 ### Phase 3 — Major infrastructure investments (real scope, not feature flags)
 
-6. **Live classes.** The single biggest gap versus 10 Minute School and the single
-   biggest lift — real-time video conferencing integration, scheduling, live chat/polls.
-   This is a different product surface, not an incremental feature.
+6. **Live classes.** ✅ Done, 2026-08-09. No provider was specified, so I picked one:
+   Daily.co, over Zoom/Agora, specifically for integration simplicity — a plain
+   Bearer-token REST API with no OAuth flow or client SDK required, and every room is
+   itself a complete call UI at its own URL, so the frontend embeds it as a plain
+   iframe — same pattern already established for YouTube and Bunny, no new JS
+   dependency needed. Verified the API shape (base URL, auth, `/rooms`,
+   `/meeting-tokens`) against Daily's current docs before writing `DailyCoService`,
+   same approach as item 7's Bunny verification. Built: instructor scheduling
+   (course-scoped, reuses the same admin/instructor gate pattern as curriculum
+   management), student join flow (enrollment-gated, join button unlocks 10 minutes
+   before start), `/live-classes` page adaptive to role. Rooms are created with `exp`
+   set to auto-expire/self-clean on Daily's side regardless of whether our own
+   cleanup call succeeds. **Needs your action**: `DAILY_API_KEY` + `DAILY_DOMAIN` in
+   `.env` — without them, scheduling shows a clear "not configured" message. **Not
+   tested against a real Daily account** — same caveat as item 7, no credentials
+   available in this environment.
 7. **Self-hosted video (move off YouTube embeds).** `Learn.jsx` currently plays lessons
    via YouTube embed (see `getYouTubeId()`). ✅ **Done, 2026-08-07 — reframed on
    investigation**: the "YouTube embed" premise was wrong — VideoPlayer already
@@ -217,14 +230,21 @@ engineering cost" implies — see notes under each. Verified via `npm run build`
    environment; the one lowest-confidence detail (TUS signature byte order) is now
    confirmed correct against Bunny's docs, so a first real upload attempt is the
    actual test.
-8. **Offline download of lessons.** Explicitly marketed by 10 Minute School and maps
-   directly to real Bangladesh mobile-data cost/reliability concerns — this isn't just
-   trend-chasing, it's locally load-bearing. Depends on #7 being done first; not
-   realistically achievable on top of YouTube-embedded video. *Now unblocked by item 7
-   above, with a wrinkle worth knowing: Bunny serves HLS (many small segment files),
-   which is meaningfully harder to cache for offline playback than a single MP4 file
-   would be — worth scoping as its own conversation, not assumed to be a quick add
-   just because item 7 is done.*
+8. **Offline download of lessons.** ✅ Done, 2026-08-09 — scoped deliberately narrower
+   than "all video," for a real reason found while building it: fetching video bytes
+   as a downloadable blob requires the host's CORS policy to allow cross-origin reads,
+   which this app doesn't control. YouTube never allows this (against their ToS
+   regardless). Bunny-hosted video goes through an iframe embed (see item 7), which
+   isn't a file at all — nothing to fetch. So this only offers "Save offline" for (a)
+   text-type lessons, which are fully reliable since the content already comes through
+   our own API, no cross-origin issue at all, and (b) video lessons using a directly-
+   pasted file URL (the manual "Video URL" field, not Bunny/YouTube) — attempted via
+   `fetch()`, honestly surfaced as a failure if the host's CORS policy blocks it rather
+   than pretending it always works. Storage is plain IndexedDB (no new dependency) via
+   `offlineStore.js`; a `/downloads` page lists, plays, and removes saved lessons,
+   working fully offline once loaded since it never touches the network. This is a
+   real, working feature for what it covers — not a placeholder — just honestly
+   scoped to the subset of content that can actually be downloaded rather than played.
 9. **Native mobile app.** The API already exists, so this isn't starting from zero, but
    it's still a separate build (React Native or similar), not a design tweak. Not
    something buildable inside this repo/session — a real separate project.
