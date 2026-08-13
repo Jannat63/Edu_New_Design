@@ -9,12 +9,12 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET NAMES utf8mb4;
 USE edubd;
 
-INSERT INTO roles (id, name, slug, created_at, updated_at) VALUES
+INSERT IGNORE INTO roles (id, name, slug, created_at, updated_at) VALUES
 (1, 'Admin',      'admin',      NOW(), NOW()),
 (2, 'Student',    'student',    NOW(), NOW()),
 (3, 'Instructor', 'instructor', NOW(), NOW());
 
-INSERT INTO users (id, role_id, name, email, phone, city, bio, password, is_active, email_verified_at, created_at, updated_at) VALUES
+INSERT IGNORE INTO users (id, role_id, name, email, phone, city, bio, password, is_active, email_verified_at, created_at, updated_at) VALUES
 -- Admin  → password: password
 (1,  1, 'EduBD Admin',       'admin@edubd.com',    '01700000000', 'Dhaka',      'Platform administrator',                                            '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, NOW(), NOW(), NOW()),
 -- Instructors  → password: password
@@ -32,15 +32,16 @@ INSERT INTO users (id, role_id, name, email, phone, city, bio, password, is_acti
 (12, 2, 'Sumaiya Islam',     'sumaiya@gmail.com',  '01855555555', 'Dhaka',      NULL, '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, NOW(), NOW(), NOW()),
 (13, 2, 'Rahim Uddin',       'rahim@gmail.com',    '01866666666', 'Rajshahi',   NULL, '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, NOW(), NOW(), NOW());
 
-INSERT INTO categories (id, name, slug, icon, color, sort_order, is_active, created_at, updated_at) VALUES
+INSERT IGNORE INTO categories (id, name, slug, icon, color, sort_order, is_active, created_at, updated_at) VALUES
 (1, 'Web Development',   'web-development',   'Code',       '#4F46E5', 1, 1, NOW(), NOW()),
 (2, 'Data Science',      'data-science',      'BarChart2',  '#10B981', 2, 1, NOW(), NOW()),
 (3, 'Graphic Design',    'graphic-design',    'PenTool',    '#F97316', 3, 1, NOW(), NOW()),
 (4, 'Digital Marketing', 'digital-marketing', 'TrendingUp', '#A855F7', 4, 1, NOW(), NOW()),
 (5, 'English & IELTS',   'english-ielts',     'Globe',      '#F43F5E', 5, 1, NOW(), NOW()),
-(6, 'Finance',           'finance',           'Lightbulb',  '#F59E0B', 6, 1, NOW(), NOW());
+(6, 'Finance',           'finance',           'Lightbulb',  '#F59E0B', 6, 1, NOW(), NOW()),
+(7, 'Job Prep / BCS & Bank Jobs', 'job-prep-bcs-bank', 'Landmark', '#6B2C39', 7, 1, NOW(), NOW());
 
-INSERT INTO courses (id, category_id, instructor_id, title, slug, subtitle, language, level, price, discount_price, status, average_rating, total_reviews, total_students, total_lessons, total_duration_minutes, created_at, updated_at) VALUES
+INSERT IGNORE INTO courses (id, category_id, instructor_id, title, slug, subtitle, language, level, price, discount_price, status, average_rating, total_reviews, total_students, total_lessons, total_duration_minutes, created_at, updated_at) VALUES
 (1, 1, 2, 'Complete React & Next.js Developer Bootcamp',  'complete-react-nextjs-developer-bootcamp',  'Master React 18, Next.js 14, TypeScript, Tailwind CSS. Build 5 real-world projects.',        'Bengali & English', 'Intermediate', 2400.00, 1200.00, 'published', 4.9, 1240, 8500,  185, 2520, NOW(), NOW()),
 (2, 2, 3, 'Python for Data Science & Machine Learning',   'python-for-data-science-machine-learning',  'Learn Python, Pandas, NumPy, Scikit-Learn, TensorFlow and build real ML models.',             'Bengali & English', 'Beginner',     3000.00, 1500.00, 'published', 4.8, 980,  6200,  140, 3360, NOW(), NOW()),
 (3, 5, 4, 'IELTS Complete Preparation Course 2025',       'ielts-complete-preparation-course-2025',    'Score 7.0+ in IELTS with our proven step-by-step preparation system.',                       'Bengali & English', 'All Levels',   2200.00, 1100.00, 'published', 4.9, 2100, 12000, 96,  2280, NOW(), NOW()),
@@ -48,7 +49,7 @@ INSERT INTO courses (id, category_id, instructor_id, title, slug, subtitle, lang
 (5, 4, 6, 'Digital Marketing Complete Bootcamp 2025',     'digital-marketing-complete-bootcamp-2025',  'Master SEO, Facebook Ads, Google Ads, email marketing and grow any business online.',         'Bengali',           'Beginner',     1600.00, 800.00,  'published', 4.8, 890,  5800,  88,  1680, NOW(), NOW()),
 (6, 6, 7, 'Financial Accounting & Tally ERP Complete',    'financial-accounting-tally-erp-complete',   'Learn bookkeeping, financial statements, and Tally ERP 9 from scratch.',                     'Bengali',           'Beginner',     1400.00, 700.00,  'published', 4.6, 620,  3400,  72,  1440, NOW(), NOW());
 
-INSERT INTO sections (id, course_id, title, sort_order, created_at, updated_at) VALUES
+INSERT IGNORE INTO sections (id, course_id, title, sort_order, created_at, updated_at) VALUES
 (1, 1, 'Getting Started',            1, NOW(), NOW()),
 (2, 1, 'React 18 Fundamentals',      2, NOW(), NOW()),
 (3, 1, 'Next.js 14 App Router',      3, NOW(), NOW()),
@@ -56,7 +57,7 @@ INSERT INTO sections (id, course_id, title, sort_order, created_at, updated_at) 
 (5, 1, '5 Real-World Projects',      5, NOW(), NOW()),
 (6, 1, 'Deployment & Certification', 6, NOW(), NOW());
 
-INSERT INTO lessons (id, section_id, course_id, title, type, duration_seconds, is_preview, sort_order, created_at, updated_at) VALUES
+INSERT IGNORE INTO lessons (id, section_id, course_id, title, type, duration_seconds, is_preview, sort_order, created_at, updated_at) VALUES
 (1,  1, 1, 'Welcome & course overview',           'video',    320,  1, 1, NOW(), NOW()),
 (2,  1, 1, 'Setting up Node.js & VS Code',        'video',    940,  1, 2, NOW(), NOW()),
 (3,  1, 1, 'Course resources & GitHub repo',      'resource', 0,    0, 3, NOW(), NOW()),
@@ -77,7 +78,7 @@ INSERT INTO lessons (id, section_id, course_id, title, type, duration_seconds, i
 (18, 6, 1, 'Deploying to Vercel',                 'video',    900,  0, 1, NOW(), NOW()),
 (19, 6, 1, 'Final certification exam',            'quiz',     0,    0, 2, NOW(), NOW());
 
-INSERT INTO enrollments (id, user_id, course_id, amount_paid, progress_pct, completed_lessons, enrolled_at, completed_at, created_at, updated_at) VALUES
+INSERT IGNORE INTO enrollments (id, user_id, course_id, amount_paid, progress_pct, completed_lessons, enrolled_at, completed_at, created_at, updated_at) VALUES
 (1,  8,  1, 1200.00, 72,  13, DATE_SUB(NOW(), INTERVAL 90 DAY),  NULL,                          NOW(), NOW()),
 (2,  8,  3, 1100.00, 100, 96, DATE_SUB(NOW(), INTERVAL 120 DAY), DATE_SUB(NOW(), INTERVAL 30 DAY), NOW(), NOW()),
 (3,  9,  1, 1200.00, 45,  8,  DATE_SUB(NOW(), INTERVAL 60 DAY),  NULL,                          NOW(), NOW()),
@@ -88,7 +89,7 @@ INSERT INTO enrollments (id, user_id, course_id, amount_paid, progress_pct, comp
 (8,  12, 1, 1200.00, 20,  4,  DATE_SUB(NOW(), INTERVAL 15 DAY),  NULL,                          NOW(), NOW()),
 (9,  13, 2, 1500.00, 55,  77, DATE_SUB(NOW(), INTERVAL 40 DAY),  NULL,                          NOW(), NOW());
 
-INSERT INTO payments (id, user_id, course_id, amount, currency, gateway, transaction_id, status, paid_at, created_at, updated_at) VALUES
+INSERT IGNORE INTO payments (id, user_id, course_id, amount, currency, gateway, transaction_id, status, paid_at, created_at, updated_at) VALUES
 (1, 8,  1, 1200.00, 'BDT', 'nagad',     'NGD-5512-8834', 'paid', DATE_SUB(NOW(), INTERVAL 90 DAY),  NOW(), NOW()),
 (2, 8,  3, 1100.00, 'BDT', 'bkash',     'BKS-8843-2291', 'paid', DATE_SUB(NOW(), INTERVAL 120 DAY), NOW(), NOW()),
 (3, 9,  1, 1200.00, 'BDT', 'sslcommerz','SSL-1193-6647', 'paid', DATE_SUB(NOW(), INTERVAL 60 DAY),  NOW(), NOW()),
@@ -99,24 +100,24 @@ INSERT INTO payments (id, user_id, course_id, amount, currency, gateway, transac
 (8, 12, 1, 1200.00, 'BDT', 'bkash',     'BKS-9981-2234', 'paid', DATE_SUB(NOW(), INTERVAL 15 DAY),  NOW(), NOW()),
 (9, 13, 2, 1500.00, 'BDT', 'nagad',     'NGD-1144-8890', 'paid', DATE_SUB(NOW(), INTERVAL 40 DAY),  NOW(), NOW());
 
-INSERT INTO reviews (id, user_id, course_id, rating, body, is_visible, created_at, updated_at) VALUES
+INSERT IGNORE INTO reviews (id, user_id, course_id, rating, body, is_visible, created_at, updated_at) VALUES
 (1, 8,  1, 5, 'Best React course I have taken! The Next.js projects are incredibly practical. I built 5 real apps.',        1, DATE_SUB(NOW(), INTERVAL 20 DAY), NOW()),
 (2, 9,  1, 5, 'Tanvir explains everything so clearly in Bengali. Got my first dev job after this course!',                   1, DATE_SUB(NOW(), INTERVAL 15 DAY), NOW()),
 (3, 10, 2, 5, 'Dr. Nasrin explains ML concepts in a way anyone can understand. Best data science course in Bangladesh.',     1, DATE_SUB(NOW(), INTERVAL 10 DAY), NOW()),
 (4, 8,  3, 5, 'Scored 7.5 in IELTS after this course. The mock tests were exactly like the real exam.',                     1, DATE_SUB(NOW(), INTERVAL 25 DAY), NOW()),
 (5, 11, 4, 4, 'Really solid design course. The Figma sections are excellent. Would love more advanced prototyping content.',  1, DATE_SUB(NOW(), INTERVAL 5 DAY),  NOW());
 
-INSERT INTO certificates (id, user_id, course_id, cert_code, issued_at, created_at, updated_at) VALUES
+INSERT IGNORE INTO certificates (id, user_id, course_id, cert_code, issued_at, created_at, updated_at) VALUES
 (1, 8,  3, 'EDU-2024-8A3F2B', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW(), NOW()),
 (2, 11, 4, 'EDU-2024-C7D1E9', DATE_SUB(NOW(), INTERVAL 10 DAY), NOW(), NOW());
 
-INSERT INTO blog_categories (id, name, slug, created_at, updated_at) VALUES
+INSERT IGNORE INTO blog_categories (id, name, slug, created_at, updated_at) VALUES
 (1, 'Career Tips',    'career-tips',    NOW(), NOW()),
 (2, 'Technology',     'technology',     NOW(), NOW()),
 (3, 'Learning Tips',  'learning-tips',  NOW(), NOW()),
 (4, 'Success Stories','success-stories',NOW(), NOW());
 
-INSERT INTO blog_posts (id, author_id, blog_category_id, title, slug, excerpt, content, status, read_time_minutes, view_count, meta_title, meta_description, focus_keyword, seo_score, word_count, published_at, created_at, updated_at) VALUES
+INSERT IGNORE INTO blog_posts (id, author_id, blog_category_id, title, slug, excerpt, content, status, read_time_minutes, view_count, meta_title, meta_description, focus_keyword, seo_score, word_count, published_at, created_at, updated_at) VALUES
 (1, 1, 1, 'Top 10 Programming Skills to Learn in Bangladesh in 2025', 'top-10-programming-skills-bangladesh-2025',
  'Discover which programming skills are in highest demand in Bangladesh right now.',
  '<p>Bangladesh tech industry is growing fast. Here are the top skills to learn in 2025...</p>',
@@ -150,7 +151,7 @@ INSERT INTO blog_posts (id, author_id, blog_category_id, title, slug, excerpt, c
  'draft', 4, 0, NULL, NULL, NULL, 0, 0,
  NULL, NOW(), NOW());
 
-INSERT INTO site_settings (`key`, value, type, `group`, label, created_at, updated_at) VALUES
+INSERT IGNORE INTO site_settings (`key`, value, type, `group`, label, created_at, updated_at) VALUES
 ('site_name',          'EduBD',                                           'string',  'general', 'Site Name',          NOW(), NOW()),
 ('site_tagline',       'Bangladesh''s #1 Online Learning Platform',        'string',  'general', 'Tagline',            NOW(), NOW()),
 ('site_email',         'support@edubd.com',                               'string',  'general', 'Support Email',      NOW(), NOW()),
@@ -164,6 +165,21 @@ INSERT INTO site_settings (`key`, value, type, `group`, label, created_at, updat
 ('meta_description',   'Learn from Bangladesh''s top experts. 500+ courses.','string','seo',    'Meta Description',   NOW(), NOW()),
 ('google_analytics_id','',                                                'string',  'seo',     'GA ID',              NOW(), NOW()),
 ('mail_from_name',     'EduBD',                                           'string',  'email',   'Mail From Name',     NOW(), NOW()),
-('mail_from_address',  'noreply@edubd.com',                               'string',  'email',   'Mail From Address',  NOW(), NOW());
+('mail_from_address',  'noreply@edubd.com',                               'string',  'email',   'Mail From Address',  NOW(), NOW()),
+('referral_commission_percent', '15',                                     'integer', 'referral','Referral Commission %', NOW(), NOW());
+
+-- Gamification badges (Phase 2 item 5) — this table didn't exist in this
+-- dump at all until now, since it was added after this file was written.
+-- Matches database/seeders/BadgeSeeder.php exactly; keep both in sync if
+-- either changes.
+INSERT IGNORE INTO badges (id, `key`, name, description, icon, criteria_type, criteria_value, sort_order) VALUES
+(1, 'first-lesson', 'First Step',        'Complete your first lesson', 'Footprints', 'lessons_completed', 1,  1),
+(2, 'lessons-10',   'Getting Going',     'Complete 10 lessons',        'BookOpen',   'lessons_completed', 10, 2),
+(3, 'lessons-50',   'Dedicated Learner', 'Complete 50 lessons',        'BookMarked', 'lessons_completed', 50, 3),
+(4, 'streak-3',     'Warming Up',        'Learn 3 days in a row',      'Flame',      'streak_days',       3,  4),
+(5, 'streak-7',     'On a Roll',         'Learn 7 days in a row',      'Flame',      'streak_days',       7,  5),
+(6, 'streak-30',    'Unstoppable',       'Learn 30 days in a row',     'Flame',      'streak_days',       30, 6),
+(7, 'course-1',     'Course Complete',   'Finish your first course',   'Trophy',     'courses_completed', 1,  7),
+(8, 'course-3',     'Triple Threat',     'Finish 3 courses',           'Award',      'courses_completed', 3,  8);
 
 SET FOREIGN_KEY_CHECKS = 1;

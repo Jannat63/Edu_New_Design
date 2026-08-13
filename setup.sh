@@ -174,9 +174,16 @@ php artisan migrate --force || fail "Migration failed. Check the error above."
 ok "Database schema created (all tables, including ones added after initial release)"
 
 echo "  Importing sample data (users, courses, etc.)..."
+# edubd_seed_data.sql uses INSERT IGNORE throughout specifically so this is
+# safe to run every time: rows that already exist (matching primary/unique
+# key) are silently skipped, and any *new* rows added to this file since
+# your last run (e.g. a new demo category, or new gamification badges) get
+# inserted normally. An earlier version of this script used plain INSERT,
+# which meant re-running against an already-seeded database failed outright
+# on the very first row instead of leaving existing data alone.
 mysql -u "$DB_APP_USER" -p"$DB_APP_PASS" edubd < database/edubd_seed_data.sql \
     || fail "SQL import failed. Check database/edubd_seed_data.sql exists and is valid."
-ok "Sample data imported"
+ok "Sample data imported (existing rows preserved, any new ones added)"
 
 # Re-hash every demo account's password using THIS machine's own PHP build.
 # A bcrypt hash baked into a static SQL file is a single point of failure —

@@ -85,6 +85,27 @@ ran it yourself. If something works in review but breaks when you actually run i
 the most likely category of issue — and it's genuinely useful signal, not a sign the
 review was sloppy.
 
+**Confirmed exactly this, 2026-08-10**: your first real `bash setup.sh` run (the first
+time any of Phase 2/3's migrations touched a real database) applied all five new
+migrations cleanly — genuinely good signal — but then hit `ERROR 1062: Duplicate entry
+'1' for key 'roles.PRIMARY'` on the sample-data import. Root cause, found by actually
+reading `setup.sh` and `edubd_seed_data.sql` fresh rather than guessing: **two parallel,
+non-overlapping data-seeding mechanisms exist in this codebase.** `setup.sh` never calls
+`php artisan db:seed` — it only imports `edubd_seed_data.sql` directly via raw `mysql`.
+That means every Eloquent PHP seeder edited across this whole project (`CategorySeeder`'s
+Job Prep category, `BadgeSeeder`'s 8 badges, `SiteSettingSeeder`'s referral rate) was
+**never actually reaching a real database** — only this SQL file was. Fixed two things:
+(1) added the missing category/badges/setting directly to `edubd_seed_data.sql` so
+they're actually present after setup, and (2) changed every `INSERT INTO` in that file to
+`INSERT IGNORE INTO` and removed the plain-INSERT approach that broke on any re-run
+against already-seeded data — re-running `setup.sh` now safely no-ops existing rows and
+adds any new ones, which matters concretely for you since you're iterating across
+multiple zips and each one may add new seed data the last import didn't have.
+**Still true**: the PHP seeders and this SQL file describe the same data through two
+disconnected paths — if you add more seed data going forward, both need editing, since
+nothing enforces they stay in sync (the badges entry above says so explicitly, as a
+reminder for whichever of us touches this next).
+
 ---
 
 ## 2. Upgrade plan — phased roadmap
