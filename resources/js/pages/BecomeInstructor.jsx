@@ -1,7 +1,7 @@
 import { GraduationCap, DollarSign, Users, Clock, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
@@ -26,7 +26,7 @@ const STEPS = [
 
 export default function BecomeInstructorPage() {
   const C = useThemeColors();
-  usePageTitle("Become an Instructor");
+  usePageSeo({ fallbackTitle: "Become an Instructor" });
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" }}>

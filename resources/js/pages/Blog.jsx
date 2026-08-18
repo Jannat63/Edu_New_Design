@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Clock, Eye, Share2, Facebook, Twitter, Linkedin, Link2,
@@ -49,20 +51,13 @@ const RELATED = [
 function Navbar() {
   const C = useThemeColors();
   return (
-    <nav style={{ position:"sticky", top:0, zIndex:100, background:C.w, borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex", alignItems:"center", height:64, gap:24, maxWidth:1280, margin:"0 auto", padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", flexShrink:0 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ fontFamily:"'Fraunces',serif", color:C.t1, fontWeight:600, fontSize:21, letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a, fontStyle:"italic", fontWeight:500 }}>BD</span></span>
-        </Link>
-        <div style={{ flex:1 }} />
+    <MegaMenu logo={<Logo />} actions={
+      <>
         <Link to="/blog" style={{ color:C.t2, fontSize:14, fontWeight:500, textDecoration:"none", padding:"7px 13px" }}>← All articles</Link>
         <DarkModeToggle size="sm" />
         <AuthNavActions />
-      </div>
-    </nav>
+      </>
+    } />
   );
 }
 

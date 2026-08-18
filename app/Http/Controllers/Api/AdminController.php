@@ -454,9 +454,14 @@ class AdminController extends Controller
             return response()->json(['message' => 'Only paid transactions can be refunded.'], 422);
         }
 
-        // NOTE: This marks the record as refunded. Actually returning funds to
-        // the customer's bKash/Nagad/SSLCommerz account requires calling that
-        // gateway's refund API separately with the stored gateway_ref.
+        // NOTE: this only marks the record as refunded and revokes access.
+        // Actually returning funds to the customer's bKash/Nagad/SSLCommerz
+        // account requires calling that gateway's refund API separately with
+        // the stored gateway_ref — not done here (see UPGRADE_PLAN.md Phase 4
+        // item 14 for why, and what a real integration would need). The
+        // message below is deliberately explicit about this so whoever
+        // triggers this endpoint can't miss the manual step, since nothing
+        // else in the response would otherwise signal it.
         $payment->update(['status' => 'refunded', 'refunded_at' => now()]);
 
         // Revoke course access. Bundle payments have no course_id (only
@@ -483,8 +488,8 @@ class AdminController extends Controller
         }
 
         $message = $enrollments->isEmpty()
-            ? 'Payment marked as refunded. No matching enrollment was found to revoke — check course access manually.'
-            : 'Payment marked as refunded and course access revoked.';
+            ? "Payment marked as refunded (no matching enrollment found to revoke — check course access manually). This does NOT send money back through {$payment->gateway} — process that separately in your {$payment->gateway} merchant dashboard using reference {$payment->transaction_id}."
+            : "Payment marked as refunded and course access revoked. This does NOT send money back through {$payment->gateway} — process that separately in your {$payment->gateway} merchant dashboard using reference {$payment->transaction_id}.";
 
         return response()->json(['message' => $message]);
     }

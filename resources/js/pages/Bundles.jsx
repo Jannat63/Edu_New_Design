@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { GraduationCap, Package, ChevronRight, Sparkles } from "lucide-react";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import { api } from "@/lib/api";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
@@ -15,28 +17,7 @@ const C = {
 };
 
 function Navbar() {
-  const C = useThemeColors();
-  return (
-    <nav style={{ position:"sticky",top:0,zIndex:100,background:C.w,borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex",alignItems:"center",height:64,gap:28,maxWidth:1280,margin:"0 auto",padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex",alignItems:"center",gap:9,textDecoration:"none",flexShrink:0 }}>
-          <div style={{ width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.p},#4B5390)`,display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ fontFamily:"'Fraunces',serif", color:C.t1,fontWeight:600,fontSize:21,letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a,fontStyle:"italic",fontWeight:500 }}>BD</span></span>
-        </Link>
-        <div style={{ display:"flex",gap:2,flex:1 }}>
-          {[["Home","/"],["Courses","/courses"],["Bundles","/bundles"],["Blog","/blog"],["About","/about"]].map(([l,to])=>(
-            <Link key={l} to={to} style={{ color:l==="Bundles"?C.p:C.t2,fontSize:14,fontWeight:l==="Bundles"?700:500,padding:"7px 13px",borderRadius:8,textDecoration:"none" }}>{l}</Link>
-          ))}
-        </div>
-        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <DarkModeToggle size="sm" />
-          <AuthNavActions />
-        </div>
-      </div>
-    </nav>
-  );
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 function Footer() {
@@ -102,7 +83,7 @@ function BundleCard({ b }) {
 
 export default function BundlesPage() {
   const C = useThemeColors();
-  usePageTitle("Course Bundles");
+  usePageSeo({ fallbackTitle: "Course Bundles" });
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
 

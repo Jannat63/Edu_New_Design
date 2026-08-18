@@ -33,7 +33,7 @@ class BundleController extends Controller {
         return $request->validate([
             'title'=>'required|string|max:255','description'=>'nullable|string',
             'price'=>'required|numeric|min:0','original_price'=>'nullable|numeric|min:0',
-            'is_active'=>'nullable|boolean','thumbnail'=>'nullable|image|max:2048',
+            'is_active'=>'nullable|boolean','thumbnail'=>'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'course_ids'=>'nullable|array','course_ids.*'=>'exists:courses,id',
         ]);
     }

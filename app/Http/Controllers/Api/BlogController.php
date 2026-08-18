@@ -98,8 +98,10 @@ class BlogController extends Controller
                 'schema' => [
                     'article'            => $post->article_schema,
                     'breadcrumb'         => $post->breadcrumb_schema,
+                    'faq'                => $post->faq_schema,
                 ],
             ],
+            'faqs' => $post->faqs ?? [],
         ]);
     }
 
@@ -131,6 +133,22 @@ class BlogController extends Controller
         return response()->json($posts);
     }
 
+    /**
+     * GET /api/v1/admin/blog/{id} — full post detail for the edit form.
+     * This route didn't exist at all before — Admin.jsx's edit flow
+     * (`openEdit`) has been calling it since that UI was built, so opening
+     * "Edit" on any post has been failing outright. Found while wiring faqs
+     * (Phase 6 item 19, UPGRADE_PLAN.md) since the edit form needs this to
+     * populate; fixed alongside it rather than filed separately, since the
+     * fix is one method either way.
+     */
+    public function adminShow(int $id)
+    {
+        $post = BlogPost::findOrFail($id);
+
+        return response()->json($post);
+    }
+
     /** POST /api/v1/admin/blog — create new post */
     public function store(Request $request)
     {
@@ -141,7 +159,7 @@ class BlogController extends Controller
             'blog_category_id'    => 'nullable|exists:blog_categories,id',
             'tags'                => 'nullable|array',
             'status'              => 'in:draft,published,archived',
-            'thumbnail'           => 'nullable|image|max:2048',
+            'thumbnail'           => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'published_at'        => 'nullable|date',
             // SEO
             'meta_title'          => 'nullable|string|max:70',
@@ -151,17 +169,20 @@ class BlogController extends Controller
             'canonical_url'       => 'nullable|url',
             'og_title'            => 'nullable|string|max:255',
             'og_description'      => 'nullable|string|max:500',
-            'og_image'            => 'nullable|image|max:2048',
+            'og_image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'og_type'             => 'in:article,website,product',
             'twitter_title'       => 'nullable|string|max:255',
             'twitter_description' => 'nullable|string|max:500',
-            'twitter_image'       => 'nullable|image|max:2048',
+            'twitter_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'twitter_card_type'   => 'in:summary,summary_large_image',
             'is_noindex'          => 'boolean',
             'is_nofollow'         => 'boolean',
             'breadcrumb_title'    => 'nullable|string|max:255',
             'related_post_ids'    => 'nullable|array',
             'schema_markup'       => 'nullable|json',
+            'faqs'                => 'nullable|array',
+            'faqs.*.question'     => 'required_with:faqs|string|max:255',
+            'faqs.*.answer'       => 'required_with:faqs|string|max:2000',
         ]);
 
         // Handle file uploads
@@ -207,7 +228,7 @@ class BlogController extends Controller
             'blog_category_id'    => 'nullable|exists:blog_categories,id',
             'tags'                => 'nullable|array',
             'status'              => 'in:draft,published,archived',
-            'thumbnail'           => 'nullable|image|max:2048',
+            'thumbnail'           => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'published_at'        => 'nullable|date',
             'meta_title'          => 'nullable|string|max:70',
             'meta_description'    => 'nullable|string|max:320',
@@ -216,17 +237,20 @@ class BlogController extends Controller
             'canonical_url'       => 'nullable|url',
             'og_title'            => 'nullable|string|max:255',
             'og_description'      => 'nullable|string|max:500',
-            'og_image'            => 'nullable|image|max:2048',
+            'og_image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'og_type'             => 'in:article,website,product',
             'twitter_title'       => 'nullable|string|max:255',
             'twitter_description' => 'nullable|string|max:500',
-            'twitter_image'       => 'nullable|image|max:2048',
+            'twitter_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'twitter_card_type'   => 'in:summary,summary_large_image',
             'is_noindex'          => 'boolean',
             'is_nofollow'         => 'boolean',
             'breadcrumb_title'    => 'nullable|string|max:255',
             'related_post_ids'    => 'nullable|array',
             'schema_markup'       => 'nullable|json',
+            'faqs'                => 'nullable|array',
+            'faqs.*.question'     => 'required_with:faqs|string|max:255',
+            'faqs.*.answer'       => 'required_with:faqs|string|max:2000',
         ]);
 
         // Handle file uploads — delete old file if replaced

@@ -54,6 +54,9 @@ class AdminCourseController extends Controller
         if ($request->hasFile('thumbnail')) {
             $data['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
+        if ($request->hasFile('og_image')) {
+            $data['og_image'] = $request->file('og_image')->store('courses/og-images', 'public');
+        }
 
         $course = Course::create($data);
 
@@ -74,6 +77,10 @@ class AdminCourseController extends Controller
             if ($course->thumbnail) Storage::disk('public')->delete($course->thumbnail);
             $data['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
+        if ($request->hasFile('og_image')) {
+            if ($course->og_image) Storage::disk('public')->delete($course->og_image);
+            $data['og_image'] = $request->file('og_image')->store('courses/og-images', 'public');
+        }
 
         $course->update($data);
 
@@ -86,6 +93,7 @@ class AdminCourseController extends Controller
         $course = Course::findOrFail($id);
 
         if ($course->thumbnail) Storage::disk('public')->delete($course->thumbnail);
+        if ($course->og_image) Storage::disk('public')->delete($course->og_image);
         $course->delete(); // soft delete
 
         return response()->json(['message' => 'Course deleted.']);
@@ -123,9 +131,13 @@ class AdminCourseController extends Controller
             'status'           => 'nullable|in:draft,published,archived',
             'requirements'     => 'nullable|array',
             'what_you_learn'   => 'nullable|array',
+            'faqs'             => 'nullable|array',
+            'faqs.*.question'  => 'required_with:faqs|string|max:255',
+            'faqs.*.answer'    => 'required_with:faqs|string|max:2000',
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
-            'thumbnail'        => 'nullable|image|max:2048',
+            'thumbnail'        => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'og_image'         => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
     }
 
@@ -148,6 +160,18 @@ class AdminCourseController extends Controller
      */
     public function instructorStore(Request $request)
     {
+        // This route only requires auth:sanctum at the routing layer (see
+        // routes/api.php) — every other /instructor/* controller enforces the
+        // actual "and is this user really an instructor" check itself, via the
+        // same isInstructor()-or-isAdmin() pattern as CourseCurriculumController's
+        // gate(). This one was missing it, which meant any logged-in account —
+        // student role included — could create (and, since 'status' below is a
+        // client-settable field, directly publish) a course with themselves as
+        // instructor_id.
+        if (!$request->user()->isInstructor() && !$request->user()->isAdmin()) {
+            abort(403, 'Instructor access only.');
+        }
+
         $data = $request->validate([
             'title'       => 'required|string|max:255',
             'subtitle'    => 'nullable|string|max:500',

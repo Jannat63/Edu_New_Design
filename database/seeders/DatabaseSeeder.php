@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             BlogSeeder::class,
             SiteSettingSeeder::class,
             BadgeSeeder::class,
+            MenuItemSeeder::class,
         ]);
 
         $this->command->info('✅ EduBD database seeded successfully!');

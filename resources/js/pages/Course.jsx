@@ -4,13 +4,15 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "@/lib/toast";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import PaymentMethodModal from "@/components/PaymentMethodModal";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Star, Users, Clock, Award, Check, ChevronRight, ChevronDown,
   Play, FileText, HelpCircle, Repeat, Smartphone, GraduationCap,
   Globe, Shield, Share2, BadgeCheck, PlayCircle, BookOpen, BarChart2,
-  Heart, Tag, RefreshCw, CheckCircle2,
+  Heart, Tag, RefreshCw, CheckCircle2, ShoppingCart,
 } from "lucide-react";
 
 // ── TOKENS ───────────────────────────────────────────────────────────────────
@@ -57,33 +59,13 @@ function Stars({ n, size=14 }) {
 
 // ── NAVBAR ───────────────────────────────────────────────────────────────────
 function Navbar() {
-  const C = useThemeColors();
-  return (
-    <nav style={{ position:"sticky", top:0, zIndex:100, background:C.w, borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex", alignItems:"center", height:64, gap:28, maxWidth:1280, margin:"0 auto", padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", flexShrink:0 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ color:C.t1, fontWeight:900, fontSize:20, letterSpacing:"-0.5px" }}>Edu<span style={{ color:C.p }}>BD</span></span>
-        </Link>
-        <div style={{ display:"flex", gap:2, flex:1 }}>
-          {[["Home","/"],["Courses","/courses"],["Bundles","/bundles"],["Blog","/blog"],["About","/about"]].map(([l,to])=>(
-            <Link key={l} to={to} style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 13px", borderRadius:8, textDecoration:"none" }}>{l}</Link>
-          ))}
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <DarkModeToggle size="sm" />
-          <AuthNavActions />
-        </div>
-      </div>
-    </nav>
-  );
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 // ── ENROLL CARD ───────────────────────────────────────────────────────────────
 function EnrollCard({ course, isEnrolled, enrolling, onEnroll, wishlisted, onWishlist,
-  couponCode, setCouponCode, couponData, couponErr, couponLoading, onApplyCoupon }) {
+  couponCode, setCouponCode, couponData, couponErr, couponLoading, onApplyCoupon,
+  inCart, addingToCart, onAddToCart }) {
 
   const finalPrice = couponData?.final_price ?? course.price;
   const disc = course.orig > 0 ? Math.round((1 - course.price / course.orig) * 100) : 0;
@@ -122,8 +104,15 @@ function EnrollCard({ course, isEnrolled, enrolling, onEnroll, wishlisted, onWis
           </Link>
         ) : (
           <button onClick={onEnroll} disabled={enrolling}
-            style={{ width:"100%", background: enrolling ? "#D9D0C0" : `linear-gradient(135deg,${C.a},#D9A13F)`, color:C.w, border:"none", borderRadius:13, padding:"14px", fontSize:16, fontWeight:800, cursor: enrolling ? "not-allowed" : "pointer", marginBottom:14, boxShadow: enrolling ? "none" : `0 6px 20px ${C.a}40`, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            style={{ width:"100%", background: enrolling ? "#D9D0C0" : `linear-gradient(135deg,${C.a},#D9A13F)`, color:C.w, border:"none", borderRadius:13, padding:"14px", fontSize:16, fontWeight:800, cursor: enrolling ? "not-allowed" : "pointer", marginBottom:10, boxShadow: enrolling ? "none" : `0 6px 20px ${C.a}40`, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
             {enrolling ? <><RefreshCw size={16} style={{ animation:"spin .6s linear infinite" }}/> Processing…</> : <>Enroll Now →</>}
+          </button>
+        )}
+
+        {!isEnrolled && (
+          <button onClick={onAddToCart} disabled={inCart || addingToCart}
+            style={{ width:"100%", background:"transparent", color: inCart ? C.g : C.p, border:`1.5px solid ${inCart ? C.g : C.p}`, borderRadius:13, padding:"12px", fontSize:14, fontWeight:700, cursor: (inCart||addingToCart) ? "default" : "pointer", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            {inCart ? <><CheckCircle2 size={16}/> In your cart</> : addingToCart ? "Adding…" : <><ShoppingCart size={16}/> Add to Cart</>}
           </button>
         )}
 
@@ -301,6 +290,66 @@ function Requirements({ requirements }) {
             <span style={{ fontSize:14, color:C.t2, lineHeight:1.6 }}>{r}</span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+function FAQSection({ faqs }) {
+  const [openIdx, setOpenIdx] = useState(null);
+  if (!faqs || !faqs.length) return null;
+  return (
+    <div style={{ marginBottom:28 }}>
+      <SH>Frequently asked questions</SH>
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {faqs.map((f, i) => {
+          const isOpen = openIdx === i;
+          return (
+            <div key={i} style={{ border:`1.5px solid ${C.bd}`, borderRadius:14, overflow:"hidden" }}>
+              <button onClick={() => setOpenIdx(isOpen ? null : i)} style={{ width:"100%", textAlign:"left", padding:"15px 18px", background:C.w, border:"none", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:14, fontWeight:700, color:C.t1 }}>{f.question}</span>
+                <ChevronDown size={16} color={C.t3} style={{ flexShrink:0, transition:"transform .15s", transform: isOpen ? "rotate(180deg)" : "none" }} />
+              </button>
+              {isOpen && <div style={{ padding:"0 18px 16px", fontSize:13.5, color:C.t2, lineHeight:1.6 }}>{f.answer}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── RELATED / INSTRUCTOR'S OTHER COURSES ────────────────────────────────────────
+function CourseGridCard({ c }) {
+  return (
+    <Link to={`/courses/${c.slug}`} style={{ textDecoration:"none", display:"block", background:C.w, border:`1.5px solid ${C.bd}`, borderRadius:16, overflow:"hidden", transition:"box-shadow .15s, transform .15s" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,.10)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
+    >
+      <div style={{ height:120, background: c.thumbnail ? `url(${c.thumbnail}) center/cover` : `linear-gradient(135deg,${C.p},#4B5390)` }} />
+      <div style={{ padding:"13px 15px" }}>
+        <div style={{ fontSize:13.5, fontWeight:700, color:C.t1, lineHeight:1.35, marginBottom:8, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{c.title}</div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <span style={{ fontSize:12, color:C.t3, display:"flex", alignItems:"center", gap:4 }}>
+            <Star size={12} color={C.y} fill={C.y} /> {c.rating > 0 ? c.rating.toFixed(1) : "New"}
+          </span>
+          <span style={{ fontSize:13.5, fontWeight:800, color:C.p }}>
+            {c.effective_price > 0 ? `৳${c.effective_price.toLocaleString()}` : "Free"}
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function CourseCardStrip({ title, courses }) {
+  if (!courses || !courses.length) return null;
+  return (
+    <div style={{ maxWidth:1280, margin:"0 auto 40px", padding:"0 clamp(20px,4vw,40px)" }}>
+      <SH>{title}</SH>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:16 }}>
+        {courses.map(c => <CourseGridCard key={c.id} c={c} />)}
       </div>
     </div>
   );
@@ -575,6 +624,8 @@ export default function App() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [initiatingGateway, setInitiatingGateway] = useState(null);
+  const [inCart, setInCart] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -659,6 +710,18 @@ export default function App() {
         toast.error(e.message || 'Enrollment failed.');
       }
     } finally { setEnrolling(false); }
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) { navigate('/login'); return; }
+    setAddingToCart(true);
+    try {
+      const r = await api.post('/cart', { course_id: COURSE.id });
+      setInCart(true);
+      toast.success(r.message || 'Added to cart.');
+    } catch (e) {
+      toast.error(e.message || 'Could not add to cart.');
+    } finally { setAddingToCart(false); }
   };
 
   const handleSelectGateway = async (gateway) => {
@@ -757,6 +820,7 @@ export default function App() {
     isEnrolled, enrolling, onEnroll: handleEnroll,
     wishlisted, onWishlist: handleWishlist,
     couponCode, setCouponCode, couponData, couponErr, couponLoading, onApplyCoupon: handleCoupon,
+    inCart, addingToCart, onAddToCart: handleAddToCart,
   };
 
   return (
@@ -771,6 +835,7 @@ export default function App() {
           <CourseCurriculum curriculum={CURRICULUM} courseDuration={COURSE.dur} />
           <InstructorSection instructor={COURSE.instructor} />
           <ReviewsSection course={COURSE} reviews={reviews} breakdown={reviewBreakdown} isEnrolled={isEnrolled} currentUserId={user?.id} onReviewSubmitted={reloadReviews} />
+          <FAQSection faqs={course.faqs} />
         </div>
 
         <div style={{ width:320, flexShrink:0 }}>
@@ -792,6 +857,9 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      <CourseCardStrip title={`More from ${COURSE.instructor.name}`} courses={course.instructor_other_courses} />
+      <CourseCardStrip title="Students also browse" courses={course.related_courses} />
 
       <Footer />
 

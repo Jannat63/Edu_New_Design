@@ -136,7 +136,7 @@ class AuthController extends Controller
     /** POST /api/v1/auth/me/avatar */
     public function uploadAvatar(Request $request)
     {
-        $request->validate(['avatar' => 'required|image|max:2048']);
+        $request->validate(['avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048']);
 
         $user = $request->user();
 

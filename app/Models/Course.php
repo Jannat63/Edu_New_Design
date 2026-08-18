@@ -14,12 +14,13 @@ class Course extends Model
         'category_id', 'instructor_id', 'title', 'slug', 'subtitle',
         'description', 'thumbnail', 'preview_video', 'language', 'level',
         'price', 'discount_price', 'status', 'requirements', 'what_you_learn',
-        'meta_title', 'meta_description',
+        'faqs', 'meta_title', 'meta_description', 'og_image',
     ];
 
     protected $casts = [
         'requirements'    => 'array',
         'what_you_learn'  => 'array',
+        'faqs'            => 'array',
         'price'           => 'decimal:2',
         'discount_price'  => 'decimal:2',
         'average_rating'  => 'decimal:2',
@@ -110,6 +111,17 @@ class Course extends Model
         return $this->thumbnail
             ? asset('storage/' . $this->thumbnail)
             : '';
+    }
+
+    public function getOgImageUrlAttribute(): string
+    {
+        // Falls back to the course thumbnail when no distinct social-share
+        // image was set — a course almost always wants *a* preview image
+        // when shared, and requiring a separate upload for that by default
+        // would just mean most courses ship with no OG image at all.
+        return $this->og_image
+            ? asset('storage/' . $this->og_image)
+            : $this->thumbnail_url;
     }
 
     public function updateRatingStats(): void

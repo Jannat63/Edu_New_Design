@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\DoubtController;
 use App\Http\Controllers\Api\ReferralController;
@@ -81,6 +83,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/{slug}/review',    [ReviewController::class, 'store']);
             Route::put('/{slug}/review',     [ReviewController::class, 'update']);
             Route::delete('/{slug}/review',  [ReviewController::class, 'destroy']);
+            // Real student names + activity ranked against each other —
+            // enrolled-only, not something to expose to anonymous visitors.
+            Route::get('/{id}/leaderboard',  [LeaderboardController::class, 'course'])->where('id', '[0-9]+');
         });
     });
 
@@ -118,9 +123,18 @@ Route::prefix('v1')->group(function () {
         // Protected
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/initiate',     [PaymentController::class, 'initiate']);
+            Route::post('/initiate-cart',[PaymentController::class, 'initiateCart']);
             Route::get('/history',       [PaymentController::class, 'history']);
             Route::get('/{id}',          [PaymentController::class, 'show']);
         });
+    });
+
+    // ── CART (Phase 6 item 20, UPGRADE_PLAN.md) ────────────────────────────────
+    Route::middleware('auth:sanctum')->prefix('cart')->group(function () {
+        Route::get('/',               [CartController::class, 'index']);
+        Route::post('/',              [CartController::class, 'store']);
+        Route::delete('/{id}',        [CartController::class, 'destroy']);
+        Route::delete('/',            [CartController::class, 'clear']);
     });
 
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
@@ -248,6 +262,12 @@ Route::prefix('v1')->group(function () {
     // ── PUBLIC MEGA MENU ──────────────────────────────────────────────────────
     Route::get('/menu',                fn() => \App\Models\MenuItem::active()->orderBy('sort_order')->get());
 
+    // ── PUBLIC PAGE SEO LOOKUP (Phase 6 item 19, UPGRADE_PLAN.md) ─────────────
+    // Separate from course/blog SEO, which is returned as part of those
+    // models' own show() responses — this covers every page that isn't one
+    // of those two.
+    Route::get('/page-seo',            [\App\Http\Controllers\Api\Admin\PageSeoController::class, 'lookupByPath']);
+
     // ── ADMIN ─────────────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
@@ -308,6 +328,7 @@ Route::prefix('v1')->group(function () {
 
         // Blog management (CRUD + SEO)
         Route::get('/blog',                  [BlogController::class, 'adminIndex']);
+        Route::get('/blog/{id}',             [BlogController::class, 'adminShow']);
         Route::post('/blog',                 [BlogController::class, 'store']);
         Route::get('/blog/{id}',             fn($id) => \App\Models\BlogPost::with(['author','category'])->findOrFail($id));
         Route::put('/blog/{id}',             [BlogController::class, 'update']);
@@ -363,6 +384,14 @@ Route::prefix('v1')->group(function () {
         Route::put('/menu/{id}',             [MenuItemController::class, 'update']);
         Route::delete('/menu/{id}',          [MenuItemController::class, 'destroy']);
         Route::post('/menu/reorder',         [MenuItemController::class, 'reorder']);
+
+        // Site-wide page SEO — everything that isn't a course or blog post
+        // (those manage their own SEO within their own admin sections).
+        // Phase 6 item 19, UPGRADE_PLAN.md.
+        Route::get('/page-seo',              [\App\Http\Controllers\Api\Admin\PageSeoController::class, 'index']);
+        Route::post('/page-seo',             [\App\Http\Controllers\Api\Admin\PageSeoController::class, 'store']);
+        Route::put('/page-seo/{id}',         [\App\Http\Controllers\Api\Admin\PageSeoController::class, 'update']);
+        Route::delete('/page-seo/{id}',      [\App\Http\Controllers\Api\Admin\PageSeoController::class, 'destroy']);
     });
     // ── INSTRUCTOR CURRICULUM (reuses same controller — gate inside) ──────────
     Route::middleware('auth:sanctum')->prefix('instructor')->group(function () {

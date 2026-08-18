@@ -182,4 +182,42 @@ INSERT IGNORE INTO badges (id, `key`, name, description, icon, criteria_type, cr
 (7, 'course-1',     'Course Complete',   'Finish your first course',   'Trophy',     'courses_completed', 1,  7),
 (8, 'course-3',     'Triple Threat',     'Finish 3 courses',           'Award',      'courses_completed', 3,  8);
 
+-- Mega menu (Phase 5 item 15, UPGRADE_PLAN.md) — menu_items existed as a
+-- table since the original migration but had zero rows anywhere (not in this
+-- file, not in any PHP seeder), so MegaMenu.jsx — a fully-built, mobile-
+-- responsive nav component — rendered with no links at all whenever it was
+-- used, which is presumably why nothing used it and every page grew its own
+-- duplicated navbar instead. This reproduces those navbars' links (Home,
+-- Courses, Bundles, Blog, About) plus items that existed as real pages but
+-- weren't in most of those navbars: Live Classes (Phase 3 item 6) wasn't in
+-- any of them; Instructors and About's four sub-pages (Mission, Become an
+-- Instructor, Press, Contact) existed only in Home.jsx's own bespoke navbar,
+-- which is being retired alongside the rest for the same mobile-support
+-- reason (it was a hover-only desktop dropdown, same underlying problem as
+-- the others, just with richer content — content that was consequently
+-- never reachable on mobile in the first place). Category URLs under
+-- Courses use `?category=<slug>`, matching the SLUG_TO_CAT mapping added to
+-- Courses.jsx alongside this so the links actually pre-filter.
+INSERT IGNORE INTO menu_items (id, parent_id, title, url, icon, category_group, is_featured, is_active, open_new_tab, sort_order, created_at, updated_at) VALUES
+(1, NULL, 'Home',         '/',             NULL, NULL, 0, 1, 0, 1, NOW(), NOW()),
+(2, NULL, 'Courses',      '/courses',      NULL, NULL, 0, 1, 0, 2, NOW(), NOW()),
+(3, NULL, 'Instructors',  '/instructors',  NULL, NULL, 0, 1, 0, 3, NOW(), NOW()),
+(4, NULL, 'Bundles',      '/bundles',      NULL, NULL, 0, 1, 0, 4, NOW(), NOW()),
+(5, NULL, 'Live Classes', '/live-classes', NULL, NULL, 0, 1, 0, 5, NOW(), NOW()),
+(6, NULL, 'Blog',         '/blog',         NULL, NULL, 0, 1, 0, 6, NOW(), NOW()),
+(7, NULL, 'About',        '/about',        NULL, NULL, 0, 1, 0, 7, NOW(), NOW()),
+(8,  2, 'Web Development',             '/courses?category=web-development',   NULL, 'Browse by category', 0, 1, 0, 1, NOW(), NOW()),
+(9,  2, 'Data Science',                '/courses?category=data-science',      NULL, 'Browse by category', 0, 1, 0, 2, NOW(), NOW()),
+(10, 2, 'Graphic Design',              '/courses?category=graphic-design',    NULL, 'Browse by category', 0, 1, 0, 3, NOW(), NOW()),
+(11, 2, 'Digital Marketing',           '/courses?category=digital-marketing', NULL, 'Browse by category', 0, 1, 0, 4, NOW(), NOW()),
+(12, 2, 'English & IELTS',             '/courses?category=english-ielts',     NULL, 'Browse by category', 0, 1, 0, 5, NOW(), NOW()),
+(13, 2, 'Finance',                     '/courses?category=finance',           NULL, 'Browse by category', 0, 1, 0, 6, NOW(), NOW()),
+(14, 2, 'Job Prep / BCS & Bank Jobs',  '/courses?category=job-prep-bcs-bank', NULL, 'Browse by category', 1, 1, 0, 7, NOW(), NOW()),
+(15, 2, 'Browse All Courses',          '/courses',                            NULL, 'Browse by category', 0, 1, 0, 8, NOW(), NOW()),
+(16, 7, 'About EduBD',            '/about',             NULL, NULL, 0, 1, 0, 1, NOW(), NOW()),
+(17, 7, 'Our Mission',            '/mission',           NULL, NULL, 0, 1, 0, 2, NOW(), NOW()),
+(18, 7, 'Become an Instructor',   '/become-instructor', NULL, NULL, 0, 1, 0, 3, NOW(), NOW()),
+(19, 7, 'Press & Media',          '/press',             NULL, NULL, 0, 1, 0, 4, NOW(), NOW()),
+(20, 7, 'Contact Us',             '/contact',           NULL, NULL, 0, 1, 0, 5, NOW(), NOW());
+
 SET FOREIGN_KEY_CHECKS = 1;

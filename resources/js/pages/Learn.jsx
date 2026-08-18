@@ -4,7 +4,7 @@ import {
   Play, Pause, Volume2, VolumeX, Maximize, ChevronLeft, ChevronRight,
   ChevronDown, Check, CheckCircle2, Circle, FileText, HelpCircle,
   GraduationCap, BookOpen, Download, Award, X, Clock, Menu, Lock,
-  Upload, AlertCircle, Star, RefreshCw, ExternalLink,
+  Upload, AlertCircle, Star, RefreshCw, ExternalLink, Trophy,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import DiscussionBoard from "@/components/DiscussionBoard";
@@ -61,7 +61,16 @@ function VideoPlayer({ url, onProgress, onComplete, lessonId }) {
   const [current, setCurrent]   = useState(0);
   const [duration, setDuration] = useState(0);
   const [pct,      setPct]      = useState(0);
+  const [speed,    setSpeed]    = useState(1);
   const progressSaved = useRef(false);
+
+  const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+  const cycleSpeed = () => {
+    const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+    setSpeed(next);
+    const v = videoRef.current;
+    if (v) v.playbackRate = next;
+  };
 
   const ytId = getYouTubeId(url);
 
@@ -115,7 +124,8 @@ function VideoPlayer({ url, onProgress, onComplete, lessonId }) {
     <div style={{background:"#000",position:"relative",userSelect:"none"}} onClick={toggle}>
       {url
         ? <video ref={videoRef} src={url} style={{width:"100%",display:"block",maxHeight:"56vw"}}
-            onTimeUpdate={handleTimeUpdate} onLoadedMetadata={e=>setDuration(Math.floor(e.target.duration))}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={e=>{ setDuration(Math.floor(e.target.duration)); e.target.playbackRate = speed; }}
             onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onClick={e=>e.stopPropagation()}/>
         : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:320,color:C.t3,flexDirection:"column",gap:12}}>
             <AlertCircle size={40}/><span>No video available for this lesson.</span>
@@ -135,6 +145,9 @@ function VideoPlayer({ url, onProgress, onComplete, lessonId }) {
               {muted?<VolumeX size={18}/>:<Volume2 size={18}/>}
             </button>
             <span style={{fontSize:12,color:"rgba(255,255,255,.7)",flex:1}}>{fmtTime(current)} / {fmtTime(duration)}</span>
+            <button onClick={cycleSpeed} title="Playback speed" style={{background:"rgba(255,255,255,.12)",border:"none",borderRadius:4,cursor:"pointer",color:"#fff",fontSize:12,fontWeight:700,padding:"4px 8px",minWidth:36}}>
+              {speed}x
+            </button>
             <button onClick={()=>videoRef.current?.requestFullscreen?.()} style={{background:"none",border:"none",cursor:"pointer",color:"#fff",display:"flex"}}>
               <Maximize size={16}/>
             </button>
@@ -276,7 +289,7 @@ function AssignmentPanel({ assignmentId, lessonId, onComplete }) {
 }
 
 // ── TOP BAR ───────────────────────────────────────────────────────────────────
-function TopBar({ course, done, total, sidebarOpen, setSidebarOpen }) {
+function TopBar({ course, done, total, sidebarOpen, setSidebarOpen, onOpenLeaderboard }) {
   const pct=total>0?Math.round((done/total)*100):0;
   return (
     <div style={{background:C.dark,height:56,display:"flex",alignItems:"center",gap:14,padding:"0 18px",borderBottom:"1px solid rgba(255,255,255,.08)",flexShrink:0}}>
@@ -297,9 +310,68 @@ function TopBar({ course, done, total, sidebarOpen, setSidebarOpen }) {
         <span style={{fontSize:12,color:"rgba(255,255,255,.5)",whiteSpace:"nowrap"}}>{pct}% done</span>
       </div>
 
+      <button onClick={onOpenLeaderboard} title="Leaderboard" style={{background:"rgba(255,255,255,.07)",border:"none",borderRadius:8,padding:"7px 9px",cursor:"pointer",display:"flex",color:"rgba(255,255,255,.6)"}}>
+        <Trophy size={16}/>
+      </button>
+
       <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:"rgba(255,255,255,.07)",border:"none",borderRadius:8,padding:"7px 9px",cursor:"pointer",display:"flex",color:"rgba(255,255,255,.6)"}}>
         <Menu size={16}/>
       </button>
+    </div>
+  );
+}
+
+// ── LEADERBOARD PANEL ────────────────────────────────────────────────────────
+function LeaderboardPanel({ courseId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/courses/${courseId}/leaderboard`)
+      .then(r => { if (!cancelled) setData(r); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [courseId]);
+
+  const medalColor = rank => rank===1?"#D4AF37":rank===2?"#A8A8A8":rank===3?"#B87333":C.t3;
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.w,borderRadius:20,width:"100%",maxWidth:440,maxHeight:"82vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 20px",borderBottom:`1px solid ${C.bd}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <Trophy size={17} color="#D4AF37"/>
+            <span style={{fontSize:15,fontWeight:800,color:C.t1}}>Leaderboard</span>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.t3}}><X size={18}/></button>
+        </div>
+        <p style={{fontSize:12,color:C.t3,margin:"12px 20px 0"}}>Ranked by lessons completed, quiz scores, and current streak — students in this course only.</p>
+        <div style={{overflowY:"auto",padding:"12px 14px"}}>
+          {loading && <p style={{textAlign:"center",padding:30,color:C.t3,fontSize:13}}>Loading…</p>}
+          {!loading && data?.leaderboard?.length === 0 && <p style={{textAlign:"center",padding:30,color:C.t3,fontSize:13}}>No activity yet — be the first to complete a lesson.</p>}
+          {!loading && data?.leaderboard?.map(row => (
+            <div key={row.user_id} style={{display:"flex",alignItems:"center",gap:11,padding:"9px 10px",borderRadius:11,background:data.my_rank?.user_id===row.user_id?C.pLt:"transparent"}}>
+              <span style={{width:22,fontSize:13,fontWeight:800,color:medalColor(row.rank),textAlign:"center",flexShrink:0}}>{row.rank<=3?"●":row.rank}</span>
+              {row.avatar
+                ? <img src={row.avatar} alt={row.name} style={{width:30,height:30,borderRadius:"50%",objectFit:"cover",flexShrink:0}}/>
+                : <div style={{width:30,height:30,borderRadius:"50%",background:`linear-gradient(135deg,${C.p},#4B5390)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff",flexShrink:0}}>{(row.name||"?")[0]?.toUpperCase()}</div>
+              }
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{row.name}</div>
+                <div style={{fontSize:11,color:C.t3}}>{row.lessons_completed} lessons · {row.progress_pct}% complete{row.current_streak>0?` · 🔥${row.current_streak}`:""}</div>
+              </div>
+              <span style={{fontSize:13,fontWeight:800,color:C.p,flexShrink:0}}>{row.score}</span>
+            </div>
+          ))}
+        </div>
+        {!loading && data?.my_rank && (
+          <div style={{padding:"12px 20px",borderTop:`1px solid ${C.bd}`,fontSize:12,color:C.t2,textAlign:"center"}}>
+            You're ranked <strong style={{color:C.p}}>#{data.my_rank.rank}</strong> in this course
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -394,6 +466,7 @@ export default function Learn() {
   const [lessonLoading, setLessonLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEnrolled,  setIsEnrolled]  = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const currentLessonId = parseInt(params.get("lesson")) || null;
 
@@ -488,7 +561,8 @@ export default function Learn() {
 
   return (
     <div style={{fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",height:"100vh",display:"flex",flexDirection:"column",background:C.dark,overflow:"hidden"}}>
-      <TopBar course={course} done={doneCt} total={totalCt} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}/>
+      <TopBar course={course} done={doneCt} total={totalCt} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onOpenLeaderboard={()=>setShowLeaderboard(true)}/>
+      {showLeaderboard && course && <LeaderboardPanel courseId={course.id} onClose={()=>setShowLeaderboard(false)}/>}
 
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
         {/* Main content */}

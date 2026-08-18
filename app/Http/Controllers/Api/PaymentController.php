@@ -43,6 +43,91 @@ class PaymentController extends Controller
             : $this->initiateCourse($request, $user, (int) $data['course_id'], $data['gateway'], $data['coupon_code'] ?? null);
     }
 
+    /**
+     * POST /api/v1/payments/initiate-cart — Phase 6 item 20, UPGRADE_PLAN.md.
+     * Pays for everything currently in the user's cart in one gateway round
+     * trip. Deliberately separate from initiate() above rather than folding
+     * cart support into it — that method (and initiateCourse/initiateBundle)
+     * is exactly what Phase 4's payment-verification fixes were written
+     * against; a cart is a different enough shape (N items, no single
+     * course_id/bundle_id) that bolting it on risked touching code that's
+     * already been hardened once. This creates its own Payment +
+     * PaymentItem rows and hands off to the same dispatchToGateway() every
+     * other flow uses, so the actual gateway integration isn't duplicated.
+     */
+    public function initiateCart(Request $request)
+    {
+        $request->validate(['gateway' => 'required|in:bkash,nagad,sslcommerz']);
+        $user = $request->user();
+
+        $cartItems = \App\Models\CartItem::where('user_id', $user->id)
+            ->with(['course:id,title,price,discount_price', 'bundle:id,title,price'])
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            return response()->json(['message' => 'Your cart is empty.'], 422);
+        }
+
+        $lines = [];
+        foreach ($cartItems as $item) {
+            if ($item->course_id) {
+                if (!$item->course) continue; // deleted since being added
+                if (Enrollment::where('user_id', $user->id)->where('course_id', $item->course_id)->exists()) continue; // already owned — skip, don't charge twice
+                $lines[] = ['course_id' => $item->course_id, 'bundle_id' => null, 'amount' => (float) $item->course->effective_price, 'title' => $item->course->title];
+            } elseif ($item->bundle) {
+                $lines[] = ['course_id' => null, 'bundle_id' => $item->bundle_id, 'amount' => (float) $item->bundle->price, 'title' => $item->bundle->title];
+            }
+        }
+
+        if (empty($lines)) {
+            return response()->json(['message' => 'Everything in your cart is either already owned or no longer available.'], 422);
+        }
+
+        $total = array_sum(array_column($lines, 'amount'));
+
+        if ($total <= 0) {
+            // Every remaining item is free — enroll directly, same as the
+            // free-after-discount path in initiateCourse()/initiateBundle().
+            foreach ($lines as $line) {
+                if ($line['course_id']) {
+                    Enrollment::firstOrCreate(
+                        ['user_id' => $user->id, 'course_id' => $line['course_id']],
+                        ['amount_paid' => 0, 'enrolled_at' => now()]
+                    );
+                    Course::find($line['course_id'])?->increment('total_students');
+                } else {
+                    $this->enrollBundleCourses($user->id, \App\Models\Bundle::find($line['bundle_id']), 0);
+                }
+            }
+            \App\Models\CartItem::where('user_id', $user->id)->delete();
+            return response()->json(['message' => 'Enrolled for free!', 'free' => true]);
+        }
+
+        $payment = Payment::create([
+            'user_id'        => $user->id,
+            'amount'         => $total,
+            'currency'       => 'BDT',
+            'gateway'        => $request->gateway,
+            'transaction_id' => PaymentGatewayService::generateInvoiceNumber(),
+            'status'         => 'pending',
+            'is_cart'        => true,
+        ]);
+
+        foreach ($lines as $line) {
+            $payment->items()->create([
+                'course_id' => $line['course_id'],
+                'bundle_id' => $line['bundle_id'],
+                'amount'    => $line['amount'],
+            ]);
+        }
+
+        $productName = count($lines) === 1
+            ? $lines[0]['title']
+            : $lines[0]['title'] . ' + ' . (count($lines) - 1) . ' more';
+
+        return $this->dispatchToGateway($payment, $user, $request->gateway, $total, $productName);
+    }
+
     private function initiateCourse(Request $request, $user, int $courseId, string $gateway, ?string $couponCode)
     {
         $course = Course::findOrFail($courseId);
@@ -273,12 +358,38 @@ class PaymentController extends Controller
 
         // Never trust the client-supplied status alone — verify server-to-server,
         // exactly like the bKash and SSLCommerz callbacks already do.
+        //
+        // That alone isn't enough, though: $orderId and $paymentRefId both come
+        // straight from the request, as two independent fields. Without also
+        // checking that Nagad's own verify response actually corresponds to
+        // *this* payment, someone could pair the payment_ref_id of a real,
+        // completed, unrelated (e.g. cheap) payment with the order_id of a
+        // different, still-pending (e.g. expensive) one — verifyPayment would
+        // legitimately return "Success", just for the wrong payment, and that
+        // wrong payment would get marked paid. Nagad's verify response includes
+        // its own orderId + amount for exactly this reason; cross-check both
+        // against the Payment row before crediting it.
         try {
             $verification = $this->gateway->nagadVerifyPayment($paymentRefId ?? $orderId);
 
-            if (strtolower($verification['status'] ?? '') === 'success') {
+            $statusOk      = strtolower($verification['status'] ?? '') === 'success';
+            $orderMatches  = ($verification['orderId'] ?? null) === $payment->transaction_id;
+            $amountMatches = isset($verification['amount'])
+                && abs((float) $verification['amount'] - (float) $payment->amount) < 0.01;
+
+            if ($statusOk && $orderMatches && $amountMatches) {
                 $this->markPaid($payment, $verification);
                 return $this->redirectToFrontend('payment-result', $this->redirectQuery($payment, 'success'));
+            }
+
+            if ($statusOk && (!$orderMatches || !$amountMatches)) {
+                Log::warning('Nagad verification order/amount mismatch — refusing to mark paid', [
+                    'payment_id'       => $payment->id,
+                    'expected_order'   => $payment->transaction_id,
+                    'returned_order'   => $verification['orderId'] ?? null,
+                    'expected_amount'  => (float) $payment->amount,
+                    'returned_amount'  => $verification['amount'] ?? null,
+                ]);
             }
         } catch (\Throwable $e) {
             Log::error('Nagad verification error: ' . $e->getMessage());
@@ -301,12 +412,34 @@ class PaymentController extends Controller
             return $this->redirectToFrontend('payment-result', ['status' => 'error', 'message' => 'Payment record not found.']);
         }
 
+        // As with Nagad above: $tranId and $valId both come from the request as
+        // independent fields, and sslcommerzValidate() returns the transaction
+        // *that val_id actually belongs to* — not necessarily the one tran_id
+        // claims. SSLCommerz's own integration docs are explicit that a
+        // validation "will only [be] treated as valid if amount and transaction
+        // [id] are valid" — i.e. checking status alone is an incomplete
+        // integration. Cross-check both before crediting.
         try {
             $validation = $this->gateway->sslcommerzValidate($valId);
 
-            if (in_array($validation['status'] ?? '', ['VALID', 'VALIDATED'])) {
+            $statusOk      = in_array($validation['status'] ?? '', ['VALID', 'VALIDATED'], true);
+            $tranMatches   = ($validation['tran_id'] ?? null) === $payment->transaction_id;
+            $amountMatches = isset($validation['amount'])
+                && abs((float) $validation['amount'] - (float) $payment->amount) < 0.01;
+
+            if ($statusOk && $tranMatches && $amountMatches) {
                 $this->markPaid($payment, $validation);
                 return $this->redirectToFrontend('payment-result', $this->redirectQuery($payment, 'success'));
+            }
+
+            if ($statusOk && (!$tranMatches || !$amountMatches)) {
+                Log::warning('SSLCommerz validation tran_id/amount mismatch — refusing to mark paid', [
+                    'payment_id'      => $payment->id,
+                    'expected_tran'   => $payment->transaction_id,
+                    'returned_tran'   => $validation['tran_id'] ?? null,
+                    'expected_amount' => (float) $payment->amount,
+                    'returned_amount' => $validation['amount'] ?? null,
+                ]);
             }
         } catch (\Throwable $e) {
             Log::error('SSLCommerz validation error: ' . $e->getMessage());
@@ -339,13 +472,19 @@ class PaymentController extends Controller
     public function history(Request $request)
     {
         $payments = Payment::where('user_id', $request->user()->id)
-            ->with(['course:id,title,slug,thumbnail', 'bundle:id,title'])
+            ->with(['course:id,title,slug,thumbnail', 'bundle:id,title', 'items.course:id,title,slug,thumbnail', 'items.bundle:id,title'])
             ->orderByDesc('created_at')
             ->paginate($request->per_page ?? 20)
             ->through(fn($p) => [
                 'id'             => $p->id,
                 'course'         => $p->course ? ['title' => $p->course->title, 'slug' => $p->course->slug] : null,
                 'bundle'         => $p->bundle ? ['title' => $p->bundle->title, 'id' => $p->bundle->id] : null,
+                'is_cart'        => $p->is_cart,
+                'items'          => $p->is_cart ? $p->items->map(fn($i) => [
+                    'title' => $i->course->title ?? $i->bundle->title ?? 'Item',
+                    'type'  => $i->course_id ? 'course' : 'bundle',
+                    'amount' => (float) $i->amount,
+                ]) : [],
                 'amount'         => (float) $p->amount,
                 'currency'       => $p->currency,
                 'gateway'        => $p->gateway,
@@ -361,7 +500,9 @@ class PaymentController extends Controller
     /** GET /api/v1/payments/{id} */
     public function show(int $id, Request $request)
     {
-        $payment = Payment::where('id', $id)->where('user_id', $request->user()->id)->with(['course:id,title,slug', 'bundle:id,title'])->firstOrFail();
+        $payment = Payment::where('id', $id)->where('user_id', $request->user()->id)
+            ->with(['course:id,title,slug', 'bundle:id,title', 'items.course:id,title,slug', 'items.bundle:id,title'])
+            ->firstOrFail();
         return response()->json($payment);
     }
 
@@ -377,6 +518,11 @@ class PaymentController extends Controller
         ]);
 
         $this->creditReferralCommission($payment);
+
+        if ($payment->is_cart) {
+            $this->enrollCartItems($payment);
+            return;
+        }
 
         if ($payment->bundle_id) {
             $this->enrollBundleCourses($payment->user_id, $payment->bundle, (float) $payment->amount, $payment->id);
@@ -475,6 +621,35 @@ class PaymentController extends Controller
 
             $course->increment('total_students');
         }
+    }
+
+    /**
+     * Enrolls every course/bundle attached to a paid cart payment
+     * (payment_items rows), then empties the cart. Reuses
+     * enrollBundleCourses() for bundle lines rather than duplicating its
+     * ownership/proration logic.
+     */
+    private function enrollCartItems(Payment $payment): void
+    {
+        foreach ($payment->items as $item) {
+            if ($item->course_id) {
+                $exists = Enrollment::where('user_id', $payment->user_id)->where('course_id', $item->course_id)->exists();
+                if (!$exists) {
+                    Enrollment::create([
+                        'user_id'     => $payment->user_id,
+                        'course_id'   => $item->course_id,
+                        'payment_id'  => $payment->id,
+                        'amount_paid' => $item->amount,
+                        'enrolled_at' => now(),
+                    ]);
+                    $item->course?->increment('total_students');
+                }
+            } elseif ($item->bundle) {
+                $this->enrollBundleCourses($payment->user_id, $item->bundle, (float) $item->amount, $payment->id);
+            }
+        }
+
+        \App\Models\CartItem::where('user_id', $payment->user_id)->delete();
     }
 
     /** Build the {status, course?, bundle?} query params for a payment-result redirect. */

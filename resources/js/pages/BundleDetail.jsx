@@ -3,9 +3,11 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { usePageTitle } from "@/lib/usePageTitle";
 import {
   GraduationCap, Package, ChevronRight, Star, Users, CheckCircle2,
-  RefreshCw, ArrowRight, BookOpen,
+  RefreshCw, ArrowRight, BookOpen, ShoppingCart,
 } from "lucide-react";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import PaymentMethodModal from "@/components/PaymentMethodModal";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -21,28 +23,7 @@ const C = {
 };
 
 function Navbar() {
-  const C = useThemeColors();
-  return (
-    <nav style={{ position:"sticky",top:0,zIndex:100,background:C.w,borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex",alignItems:"center",height:64,gap:28,maxWidth:1280,margin:"0 auto",padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex",alignItems:"center",gap:9,textDecoration:"none",flexShrink:0 }}>
-          <div style={{ width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.p},#4B5390)`,display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ fontFamily:"'Fraunces',serif", color:C.t1,fontWeight:600,fontSize:21,letterSpacing:"-0.3px" }}>Edu<span style={{ color:C.a,fontStyle:"italic",fontWeight:500 }}>BD</span></span>
-        </Link>
-        <div style={{ display:"flex",gap:2,flex:1 }}>
-          {[["Home","/"],["Courses","/courses"],["Bundles","/bundles"],["Blog","/blog"],["About","/about"]].map(([l,to])=>(
-            <Link key={l} to={to} style={{ color:l==="Bundles"?C.p:C.t2,fontSize:14,fontWeight:l==="Bundles"?700:500,padding:"7px 13px",borderRadius:8,textDecoration:"none" }}>{l}</Link>
-          ))}
-        </div>
-        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <DarkModeToggle size="sm" />
-          <AuthNavActions />
-        </div>
-      </div>
-    </nav>
-  );
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 function Footer() {
@@ -71,6 +52,20 @@ export default function BundleDetailPage() {
   const [error,   setError]   = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [initiatingGateway, setInitiatingGateway] = useState(null);
+  const [inCart, setInCart] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!user) { navigate("/login"); return; }
+    setAddingToCart(true);
+    try {
+      const r = await api.post("/cart", { bundle_id: bundle.id });
+      setInCart(true);
+      toast.success(r.message || "Added to cart.");
+    } catch (e) {
+      toast.error(e.message || "Could not add to cart.");
+    } finally { setAddingToCart(false); }
+  };
 
   usePageTitle(bundle ? `${bundle.title} — Bundle` : "Course Bundle");
 
@@ -227,6 +222,16 @@ export default function BundleDetailPage() {
                 </button>
                 {ownedCount > 0 && (
                   <p style={{ fontSize:12, color:C.t3, textAlign:"center", margin:"10px 0 0" }}>You already own {ownedCount} of {bundle.courses.length} courses — you'll only pay for what's left to unlock.</p>
+                )}
+                {ownedCount === 0 && (
+                  // Cart checkout charges the bundle's full price — only
+                  // offered here when nothing in it is already owned, so it
+                  // can't silently overcharge past what "Buy remaining"
+                  // above correctly prorates for a partial owner.
+                  <button onClick={handleAddToCart} disabled={inCart || addingToCart}
+                    style={{ width:"100%", background:"transparent", color: inCart ? C.g : C.p, border:`1.5px solid ${inCart ? C.g : C.p}`, borderRadius:12, padding:"11px", fontSize:14, fontWeight:700, cursor: (inCart||addingToCart) ? "default" : "pointer", marginTop:10, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                    {inCart ? <><CheckCircle2 size={16}/> In your cart</> : addingToCart ? "Adding…" : <><ShoppingCart size={16}/> Add to Cart</>}
+                  </button>
                 )}
               </>
             )}

@@ -1,8 +1,10 @@
 
 
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import { usePageTitle } from "@/lib/usePageTitle";
 import {
   Search, BookOpen, Award, Users, Star, ChevronRight, ChevronDown,
@@ -39,6 +41,18 @@ const ALL_COURSES = [
 ];
 
 const CAT_OPTS   = ["Web Development","Data Science","Graphic Design","Digital Marketing","English & IELTS","Finance","Job Prep / BCS & Bank Jobs"];
+// Maps the `categories.slug` values (used in menu/homepage links, e.g.
+// /courses?category=web-development) back to the display names above, so a
+// deep link actually pre-filters instead of landing on an unfiltered list.
+const SLUG_TO_CAT = {
+  "web-development":  "Web Development",
+  "data-science":     "Data Science",
+  "graphic-design":   "Graphic Design",
+  "digital-marketing":"Digital Marketing",
+  "english-ielts":    "English & IELTS",
+  "finance":          "Finance",
+  "job-prep-bcs-bank":"Job Prep / BCS & Bank Jobs",
+};
 const LEVEL_OPTS = ["Beginner","Intermediate","Advanced","All Levels"];
 const LANG_OPTS  = ["Bengali","English","Bengali & English"];
 const SORT_OPTS  = [
@@ -82,28 +96,7 @@ function Checkbox({ checked, onChange, label, count }) {
 
 // ── NAVBAR ───────────────────────────────────────────────────────────────────
 function Navbar() {
-  const C = useThemeColors();
-  return (
-    <nav style={{ position:"sticky",top:0,zIndex:100,background:C.w,borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex",alignItems:"center",height:64,gap:28,maxWidth:1280,margin:"0 auto",padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex",alignItems:"center",gap:9,textDecoration:"none",flexShrink:0 }}>
-          <div style={{ width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.p},#4B5390)`,display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ color:C.t1,fontWeight:900,fontSize:20,letterSpacing:"-0.5px" }}>Edu<span style={{ color:C.p }}>BD</span></span>
-        </Link>
-        <div style={{ display:"flex",gap:2,flex:1 }}>
-          {[["Home","/"],["Courses","/courses"],["Bundles","/bundles"],["Blog","/blog"],["About","/about"]].map(([l,to])=>(
-            <Link key={l} to={to} style={{ color:l==="Courses"?C.p:C.t2,fontSize:14,fontWeight:l==="Courses"?700:500,padding:"7px 13px",borderRadius:8,textDecoration:"none" }}>{l}</Link>
-          ))}
-        </div>
-        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <DarkModeToggle size="sm" />
-          <AuthNavActions />
-        </div>
-      </div>
-    </nav>
-  );
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 // ── PAGE HEADER ───────────────────────────────────────────────────────────────
@@ -325,8 +318,12 @@ function Footer() {
 export default function App() {
   const C = useThemeColors();
   usePageTitle("All Courses");
+  const [searchParams] = useSearchParams();
   const [courses,   setCourses]   = useState(ALL_COURSES); // starts with sample data
-  const [cats,      setCats]      = useState([]);
+  const [cats,      setCats]      = useState(() => {
+    const fromUrl = SLUG_TO_CAT[searchParams.get("category")];
+    return fromUrl ? [fromUrl] : [];
+  });
   const [levels,    setLevels]    = useState([]);
   const [langs,     setLangs]     = useState([]);
   const [minRating, setMinRating] = useState(0);

@@ -21,7 +21,7 @@ class BlogPost extends Model
         'canonical_url', 'og_title', 'og_description', 'og_image', 'og_type',
         'twitter_title', 'twitter_description', 'twitter_image', 'twitter_card_type',
         'schema_markup', 'is_noindex', 'is_nofollow',
-        'breadcrumb_title', 'related_post_ids',
+        'breadcrumb_title', 'related_post_ids', 'faqs',
         'word_count', 'seo_score', 'readability_score',
     ];
 
@@ -30,6 +30,7 @@ class BlogPost extends Model
         'secondary_keywords' => 'array',
         'related_post_ids'   => 'array',
         'schema_markup'      => 'array',
+        'faqs'               => 'array',
         'published_at'       => 'datetime',
         'is_noindex'         => 'boolean',
         'is_nofollow'        => 'boolean',
@@ -160,7 +161,15 @@ class BlogPost extends Model
         ];
     }
 
-    /** FAQPage schema — pass array of ['q'=>'...','a'=>'...'] pairs */
+    /** FAQPage schema — built from this post's own `faqs` field */
+    public function getFaqSchemaAttribute(): ?array
+    {
+        if (empty($this->faqs)) return null;
+
+        return static::buildFaqSchema($this->faqs);
+    }
+
+    /** FAQPage schema — pass array of ['question'=>'...','answer'=>'...'] pairs */
     public static function buildFaqSchema(array $faqs): array
     {
         return [
@@ -168,8 +177,8 @@ class BlogPost extends Model
             '@type'      => 'FAQPage',
             'mainEntity' => array_map(fn($faq) => [
                 '@type'          => 'Question',
-                'name'           => $faq['q'],
-                'acceptedAnswer' => ['@type'=>'Answer','text'=>$faq['a']],
+                'name'           => $faq['question'],
+                'acceptedAnswer' => ['@type'=>'Answer','text'=>$faq['answer']],
             ], $faqs),
         ];
     }

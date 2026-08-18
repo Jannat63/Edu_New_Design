@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import AuthNavActions from "@/components/AuthNavActions";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Star, Users, BookOpen, Award, ChevronRight, Play, Check,
@@ -56,22 +58,7 @@ function Stars({ n, size = 14 }) {
 
 // ── NAVBAR ────────────────────────────────────────────────────────────────────
 function Navbar() {
-  const C = useThemeColors();
-  return (
-    <nav style={{ position:"sticky", top:0, zIndex:100, background:C.w, borderBottom:`1px solid ${C.bd}` }}>
-      <div style={{ display:"flex", alignItems:"center", height:64, gap:24, maxWidth:1280, margin:"0 auto", padding:"0 clamp(20px,4vw,40px)" }}>
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", flexShrink:0 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <GraduationCap size={20} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ color:C.t1, fontWeight:900, fontSize:20, letterSpacing:"-0.5px" }}>Edu<span style={{ color:C.p }}>BD</span></span>
-        </Link>
-        <div style={{ flex:1 }} />
-        <DarkModeToggle size="sm" />
-        <AuthNavActions />
-      </div>
-    </nav>
-  );
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────

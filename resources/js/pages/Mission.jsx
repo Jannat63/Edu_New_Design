@@ -3,7 +3,7 @@ import { GraduationCap, Target, TrendingUp, Globe2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { useSiteContent } from '@/lib/useSiteContent';
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
@@ -14,7 +14,7 @@ const C = {
 
 export default function MissionPage() {
   const C = useThemeColors();
-  usePageTitle("Our Mission");
+  usePageSeo({ fallbackTitle: "Our Mission" });
   const { data: cms } = useSiteContent('mission');
 
   return (

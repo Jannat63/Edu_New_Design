@@ -41,6 +41,7 @@ const NAV = [
   { id:"referral-payouts", label:"Referral Payouts",  icon:Gift            },
   { id:"notifications",    label:"Notifications",     icon:Bell            },
   { id:"menu",             label:"Mega Menu",         icon:Layers          },
+  { id:"seo",              label:"Page SEO",          icon:Search          },
   { id:"cms",              label:"Website Content",   icon:Globe           },
   { id:"settings",         label:"Settings",          icon:Settings        },
 ];
@@ -343,6 +344,9 @@ function CoursesPage() {
   const [form,setForm]=useState({});
   const [thumb,setThumb]=useState(null);
   const [thumbPreview,setThumbPreview]=useState(null);
+  const [ogImage,setOgImage]=useState(null);
+  const [ogImagePreview,setOgImagePreview]=useState(null);
+  const [faqs,setFaqs]=useState([]);
   const [saving,setSaving]=useState(false);
   const [busyId,setBusyId]=useState(null);
   const [curriculumCourse,setCurriculumCourse]=useState(null);
@@ -366,8 +370,23 @@ function CoursesPage() {
     api.get("/admin/blog-categories").then(r=>setCategories(r||[])).catch(()=>{});
   },[]);
 
-  const openAdd=()=>{ setForm({title:"",subtitle:"",description:"",category_id:"",instructor_id:"",price:"",level:"Beginner",status:"draft"}); setThumb(null); setThumbPreview(null); setModal({mode:"add"}); };
-  const openEdit=(c)=>{ setForm({title:c.title||"",subtitle:c.subtitle||"",description:c.description||"",category_id:c.category_id||"",instructor_id:c.instructor_id||"",price:c.price||"",level:c.level||"Beginner",status:c.status||"draft"}); setThumb(null); setThumbPreview(c.thumbnail_url||null); setModal({mode:"edit",course:c}); };
+  const openAdd=()=>{ setForm({title:"",subtitle:"",description:"",category_id:"",instructor_id:"",price:"",level:"Beginner",status:"draft",meta_title:"",meta_description:""}); setThumb(null); setThumbPreview(null); setOgImage(null); setOgImagePreview(null); setFaqs([]); setModal({mode:"add"}); };
+  const openEdit=async(c)=>{
+    // Was populating the form straight from the trimmed list row, which
+    // doesn't carry faqs/meta_title/og_image (those only exist on the full
+    // detail response) — every edit would silently lose whatever SEO fields
+    // were already set the moment you saved, since the form never knew they
+    // existed. AdminCourseController::show() already returns the full model
+    // (Route::apiResource registers it); this just wasn't being called.
+    try {
+      const detail = await api.get(`/admin/courses/${c.id}`);
+      setForm({title:detail.title||"",subtitle:detail.subtitle||"",description:detail.description||"",category_id:detail.category_id||"",instructor_id:detail.instructor_id||"",price:detail.price||"",level:detail.level||"Beginner",status:detail.status||"draft",meta_title:detail.meta_title||"",meta_description:detail.meta_description||""});
+      setThumb(null); setThumbPreview(detail.thumbnail_url||null);
+      setOgImage(null); setOgImagePreview(detail.og_image||null);
+      setFaqs(detail.faqs||[]);
+      setModal({mode:"edit",course:c});
+    } catch(e){ toast.error("Could not load course."); }
+  };
 
   const handleThumb=(file)=>{ setThumb(file); setThumbPreview(URL.createObjectURL(file)); };
 
@@ -378,6 +397,8 @@ function CoursesPage() {
       const fd=new FormData();
       Object.entries(form).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=="") fd.append(k,v); });
       if(thumb) fd.append("thumbnail",thumb);
+      if(ogImage) fd.append("og_image",ogImage);
+      faqs.filter(f=>f.question?.trim()&&f.answer?.trim()).forEach((f,i)=>{ fd.append(`faqs[${i}][question]`,f.question); fd.append(`faqs[${i}][answer]`,f.answer); });
 
       if(modal.mode==="add"){
         await api.post("/admin/courses",fd);
@@ -478,6 +499,21 @@ function CoursesPage() {
             <Field label="Discount Price (৳)" value={form.discount_price||""} onChange={v=>setForm(p=>({...p,discount_price:v}))} type="number" placeholder="Optional"/>
           </div>
           <ImgUpload label="Thumbnail" current={thumbPreview} onChange={handleThumb} onRemove={()=>{setThumb(null);setThumbPreview(null);}}/>
+          <div style={{background:C.bg,borderRadius:12,padding:"14px 16px",marginTop:14,marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.t1,marginBottom:12}}>SEO Fields</div>
+            <Field label="Meta Title (max 70 chars)" value={form.meta_title||""} onChange={v=>setForm(p=>({...p,meta_title:v}))} placeholder="Overrides page title in search results"/>
+            <Field label="Meta Description (max 160 chars)" value={form.meta_description||""} onChange={v=>setForm(p=>({...p,meta_description:v}))} rows={2} placeholder="Summary shown in search results…"/>
+            <ImgUpload label="Social Share Image (OG image)" current={ogImagePreview} onChange={f=>{setOgImage(f);setOgImagePreview(URL.createObjectURL(f));}} onRemove={()=>{setOgImage(null);setOgImagePreview(null);}}/>
+            <div style={{fontSize:12,fontWeight:700,color:C.t1,margin:"14px 0 8px"}}>FAQ (shown on the course page)</div>
+            {faqs.map((f,i)=>(
+              <div key={i} style={{border:`1px solid ${C.bd}`,borderRadius:10,padding:10,marginBottom:8,background:C.w}}>
+                <Field label={`Question ${i+1}`} value={f.question||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,question:v}:x))} placeholder="e.g. Do I get a certificate?"/>
+                <Field label="Answer" value={f.answer||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,answer:v}:x))} rows={2} placeholder="Answer shown when expanded…"/>
+                <button onClick={()=>setFaqs(prev=>prev.filter((_,j)=>j!==i))} style={{fontSize:11,color:C.r,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Remove</button>
+              </div>
+            ))}
+            <button onClick={()=>setFaqs(prev=>[...prev,{question:"",answer:""}])} style={{fontSize:12,fontWeight:600,color:C.p,background:"none",border:`1.5px dashed ${C.p}55`,borderRadius:8,padding:"7px 12px",cursor:"pointer",width:"100%"}}>+ Add FAQ</button>
+          </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <button onClick={()=>setModal(null)} style={{padding:"10px 18px",borderRadius:10,border:`1.5px solid ${C.bd}`,background:C.w,color:C.t2,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{padding:"10px 22px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.p},#4B5390)`,color:"#fff",fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1}}>
@@ -720,6 +756,9 @@ function BlogPage() {
   const [form,setForm]=useState({});
   const [thumb,setThumb]=useState(null);
   const [thumbPreview,setThumbPreview]=useState(null);
+  const [ogImage,setOgImage]=useState(null);
+  const [ogImagePreview,setOgImagePreview]=useState(null);
+  const [faqs,setFaqs]=useState([]);
   const [saving,setSaving]=useState(false);
   const [busyId,setBusyId]=useState(null);
   const [curriculumCourse,setCurriculumCourse]=useState(null);
@@ -734,12 +773,14 @@ function BlogPage() {
 
   const blankForm={title:"",content:"",excerpt:"",blog_category_id:"",tags:"",status:"draft",meta_title:"",meta_description:""};
 
-  const openAdd=()=>{ setForm(blankForm); setThumb(null); setThumbPreview(null); setModal({mode:"add"}); };
+  const openAdd=()=>{ setForm(blankForm); setThumb(null); setThumbPreview(null); setOgImage(null); setOgImagePreview(null); setFaqs([]); setModal({mode:"add"}); };
   const openEdit=async(p)=>{
     try {
       const detail=await api.get(`/admin/blog/${p.id}`);
       setForm({title:detail.title||"",content:detail.content||"",excerpt:detail.excerpt||"",blog_category_id:detail.blog_category_id||"",tags:(detail.tags||[]).join(", "),status:detail.status||"draft",meta_title:detail.meta_title||"",meta_description:detail.meta_description||""});
       setThumb(null); setThumbPreview(detail.thumbnail?`/storage/${detail.thumbnail}`:null);
+      setOgImage(null); setOgImagePreview(detail.og_image?`/storage/${detail.og_image}`:null);
+      setFaqs(detail.faqs||[]);
       setModal({mode:"edit",post:p});
     } catch(e){ toast.error("Could not load post."); }
   };
@@ -753,6 +794,8 @@ function BlogPage() {
       Object.entries(form).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=="") fd.append(k,k==="tags"?v:v); });
       if(form.tags) { fd.delete("tags"); form.tags.split(",").map(t=>t.trim()).filter(Boolean).forEach(t=>fd.append("tags[]",t)); }
       if(thumb) fd.append("thumbnail",thumb);
+      if(ogImage) fd.append("og_image",ogImage);
+      faqs.filter(f=>f.question?.trim()&&f.answer?.trim()).forEach((f,i)=>{ fd.append(`faqs[${i}][question]`,f.question); fd.append(`faqs[${i}][answer]`,f.answer); });
       if(modal.mode==="add"){
         await api.post("/admin/blog",fd);
         toast.success(form.status==="published" ? "Post published — live on the blog now." : "Post saved as Draft — not visible on the blog until you publish it.");
@@ -833,6 +876,16 @@ function BlogPage() {
             <div style={{fontSize:12,fontWeight:700,color:C.t1,marginBottom:12}}>SEO Fields</div>
             <Field label="Meta Title (max 70 chars)" value={form.meta_title} onChange={v=>setForm(p=>({...p,meta_title:v}))} placeholder="Overrides page title in search results"/>
             <Field label="Meta Description (max 160 chars)" value={form.meta_description} onChange={v=>setForm(p=>({...p,meta_description:v}))} rows={2} placeholder="Summary shown in search results…"/>
+            <ImgUpload label="Social Share Image (OG image)" current={ogImagePreview} onChange={f=>{setOgImage(f);setOgImagePreview(URL.createObjectURL(f));}} onRemove={()=>{setOgImage(null);setOgImagePreview(null);}}/>
+            <div style={{fontSize:12,fontWeight:700,color:C.t1,margin:"14px 0 8px"}}>FAQ (shown on the post + FAQ search snippet)</div>
+            {faqs.map((f,i)=>(
+              <div key={i} style={{border:`1px solid ${C.bd}`,borderRadius:10,padding:10,marginBottom:8,background:C.w}}>
+                <Field label={`Question ${i+1}`} value={f.question||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,question:v}:x))} placeholder="e.g. Is this post updated for 2026?"/>
+                <Field label="Answer" value={f.answer||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,answer:v}:x))} rows={2} placeholder="Answer shown when expanded…"/>
+                <button onClick={()=>setFaqs(prev=>prev.filter((_,j)=>j!==i))} style={{fontSize:11,color:C.r,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Remove</button>
+              </div>
+            ))}
+            <button onClick={()=>setFaqs(prev=>[...prev,{question:"",answer:""}])} style={{fontSize:12,fontWeight:600,color:C.p,background:"none",border:`1.5px dashed ${C.p}55`,borderRadius:8,padding:"7px 12px",cursor:"pointer",width:"100%"}}>+ Add FAQ</button>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:8}}>
             <button onClick={()=>setModal(null)} style={{padding:"10px 18px",borderRadius:10,border:`1.5px solid ${C.bd}`,background:C.w,color:C.t2,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
@@ -1199,6 +1252,128 @@ function MegaMenuPage() {
   );
 }
 
+// ── PAGE SEO (site-wide, everything that isn't a course or blog post) ──────────
+// Course/blog SEO lives in their own admin sections (CoursesPage/BlogPage
+// above) — this is the separate, general system for pages that have no
+// entity of their own: Home, About, the Courses listing, etc.
+// UPGRADE_PLAN.md Phase 6 item 19.
+function PageSeoPage() {
+  const [pages,setPages]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [search,setSearch]=useState("");
+  const [modal,setModal]=useState(null);
+  const [form,setForm]=useState({});
+  const [ogImage,setOgImage]=useState(null);
+  const [ogImagePreview,setOgImagePreview]=useState(null);
+  const [faqs,setFaqs]=useState([]);
+  const [saving,setSaving]=useState(false);
+  const [busyId,setBusyId]=useState(null);
+
+  const load=()=>{
+    setLoading(true);
+    api.get(`/admin/page-seo${search?`?search=${encodeURIComponent(search)}`:""}`).then(r=>setPages(r||[])).catch(()=>{}).finally(()=>setLoading(false));
+  };
+  useEffect(()=>{ const t=setTimeout(load,250); return ()=>clearTimeout(t); },[search]);
+
+  const openAdd=()=>{ setForm({path:"",label:"",meta_title:"",meta_description:""}); setOgImage(null); setOgImagePreview(null); setFaqs([]); setModal({mode:"add"}); };
+  const openEdit=(p)=>{ setForm({path:p.path,label:p.label||"",meta_title:p.meta_title||"",meta_description:p.meta_description||""}); setOgImage(null); setOgImagePreview(p.og_image||null); setFaqs(p.faqs||[]); setModal({mode:"edit",page:p}); };
+
+  const handleSave=async()=>{
+    if(!form.path?.trim()){ toast.error("Path is required — e.g. /about"); return; }
+    setSaving(true);
+    try {
+      const fd=new FormData();
+      Object.entries(form).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=="") fd.append(k,v); });
+      if(ogImage) fd.append("og_image",ogImage);
+      faqs.filter(f=>f.question?.trim()&&f.answer?.trim()).forEach((f,i)=>{ fd.append(`faqs[${i}][question]`,f.question); fd.append(`faqs[${i}][answer]`,f.answer); });
+      if(modal.mode==="add"){ await api.post("/admin/page-seo",fd); toast.success("Page SEO created."); }
+      else { fd.append('_method','PUT'); await api.post(`/admin/page-seo/${modal.page.id}`,fd); toast.success("Page SEO updated."); }
+      setModal(null); load();
+    } catch(e){ toast.error(e.message||"Failed to save."); }
+    finally{ setSaving(false); }
+  };
+
+  const handleDelete=async(p)=>{
+    if(!window.confirm(`Remove SEO settings for "${p.path}"? The page will fall back to its default title.`)) return;
+    setBusyId(p.id);
+    try { await api.delete(`/admin/page-seo/${p.id}`); setPages(prev=>prev.filter(x=>x.id!==p.id)); toast.success("Deleted."); }
+    catch(e){ toast.error(e.message||"Delete failed."); }
+    finally{ setBusyId(null); }
+  };
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <h2 style={{fontSize:17,fontWeight:800,color:C.t1,margin:0}}>Page SEO</h2>
+          <p style={{fontSize:13,color:C.t3,margin:"4px 0 0"}}>Meta title, description, social image, and FAQ for any page by URL — Home, About, listing pages, etc. Courses and blog posts manage their own SEO in their own sections.</p>
+        </div>
+        <button onClick={openAdd} style={{display:"flex",alignItems:"center",gap:7,background:`linear-gradient(135deg,${C.p},#4B5390)`,color:"#fff",border:"none",borderRadius:11,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+          <Plus size={15}/> Add page
+        </button>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",gap:9,background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:11,padding:"9px 14px",marginBottom:16,maxWidth:360}}>
+        <Search size={15} color={C.t3}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by path or label…" style={{border:"none",outline:"none",fontSize:13,color:C.t1,background:"transparent",width:"100%"}}/>
+      </div>
+
+      {loading&&<p style={{textAlign:"center",padding:40,color:C.t3}}>Loading…</p>}
+
+      <div style={{background:C.w,border:`1.5px solid ${C.bd}`,borderRadius:18,overflow:"hidden"}}>
+        {!loading&&pages.map(p=>(
+          <div key={p.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 20px",borderBottom:`1px solid ${C.bd}`}}
+            onMouseEnter={e=>e.currentTarget.style.background=C.bg} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:13,fontWeight:700,color:C.t1,fontFamily:"monospace"}}>{p.path}</span>
+                {p.label&&<span style={{fontSize:12,color:C.t3}}>— {p.label}</span>}
+              </div>
+              <div style={{fontSize:12,color:C.t2,marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.meta_title||"No meta title set"}</div>
+            </div>
+            {p.faqs?.length>0&&<span style={{fontSize:11,background:C.pLt,color:C.p,padding:"2px 8px",borderRadius:100,fontWeight:600,whiteSpace:"nowrap"}}>{p.faqs.length} FAQ{p.faqs.length>1?"s":""}</span>}
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>openEdit(p)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${C.bd}`,background:C.w,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Edit size={12} color={C.p}/></button>
+              <button onClick={()=>handleDelete(p)} disabled={busyId===p.id} style={{width:28,height:28,borderRadius:7,border:`1px solid ${C.rLt}`,background:C.rLt,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><Trash2 size={12} color={C.r}/></button>
+            </div>
+          </div>
+        ))}
+        {!loading&&pages.length===0&&(
+          <div style={{textAlign:"center",padding:48,color:C.t3}}>
+            <Search size={40} color={C.bd} style={{marginBottom:12}}/>
+            <div>No pages configured yet. Add one for any URL path — e.g. /about.</div>
+          </div>
+        )}
+      </div>
+
+      {modal&&(
+        <Modal title={modal.mode==="add"?"Add Page SEO":`Edit: ${modal.page?.path}`} onClose={()=>setModal(null)} width={560}>
+          <Field label="Path" value={form.path} onChange={v=>setForm(p=>({...p,path:v}))} required placeholder="/about"/>
+          <Field label="Label (for this list only)" value={form.label} onChange={v=>setForm(p=>({...p,label:v}))} placeholder="e.g. About page"/>
+          <Field label="Meta Title (max 70 chars)" value={form.meta_title} onChange={v=>setForm(p=>({...p,meta_title:v}))} placeholder="Overrides the page's default title"/>
+          <Field label="Meta Description (max 160 chars)" value={form.meta_description} onChange={v=>setForm(p=>({...p,meta_description:v}))} rows={2} placeholder="Summary shown in search results…"/>
+          <ImgUpload label="Social Share Image (OG image)" current={ogImagePreview} onChange={f=>{setOgImage(f);setOgImagePreview(URL.createObjectURL(f));}} onRemove={()=>{setOgImage(null);setOgImagePreview(null);}}/>
+          <div style={{fontSize:12,fontWeight:700,color:C.t1,margin:"14px 0 8px"}}>FAQ (for this page's FAQ schema / snippet)</div>
+          {faqs.map((f,i)=>(
+            <div key={i} style={{border:`1px solid ${C.bd}`,borderRadius:10,padding:10,marginBottom:8,background:C.bg}}>
+              <Field label={`Question ${i+1}`} value={f.question||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,question:v}:x))} placeholder="e.g. Is EduBD free to join?"/>
+              <Field label="Answer" value={f.answer||""} onChange={v=>setFaqs(prev=>prev.map((x,j)=>j===i?{...x,answer:v}:x))} rows={2} placeholder="Answer shown when expanded…"/>
+              <button onClick={()=>setFaqs(prev=>prev.filter((_,j)=>j!==i))} style={{fontSize:11,color:C.r,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>Remove</button>
+            </div>
+          ))}
+          <button onClick={()=>setFaqs(prev=>[...prev,{question:"",answer:""}])} style={{fontSize:12,fontWeight:600,color:C.p,background:"none",border:`1.5px dashed ${C.p}55`,borderRadius:8,padding:"7px 12px",cursor:"pointer",width:"100%",marginBottom:16}}>+ Add FAQ</button>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <button onClick={()=>setModal(null)} style={{padding:"10px 18px",borderRadius:10,border:`1.5px solid ${C.bd}`,background:C.w,color:C.t2,fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} style={{padding:"10px 22px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.p},#4B5390)`,color:"#fff",fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1}}>
+              {saving?"Saving…":modal.mode==="add"?"Create":"Save Changes"}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ── CMS PAGE (NEW) ─────────────────────────────────────────────────────────────
 const CMS_TABS=[
   {id:"general",   label:"General",        icon:Settings },
@@ -1519,6 +1694,7 @@ export default function Admin() {
     if(active==="payment-methods") return <PaymentMethodsPage/>;
     if(active==="notifications")   return <NotificationsPage/>;
     if(active==="menu")            return <MegaMenuPage/>;
+    if(active==="seo")             return <PageSeoPage/>;
     if(active==="cms")             return <CMSPage/>;
     if(active==="coupons")         return <CouponsPage/>;
     if(active==="bundles")         return <BundlesPage/>;

@@ -5,14 +5,34 @@ use App\Models\Enrollment;
 use App\Models\Payout;
 use Illuminate\Http\Request;
 class PayoutController extends Controller {
+    /**
+     * Every method below is scoped to $request->user()->id, so one instructor
+     * can never see or touch another's payouts — but scoping to "your own ID"
+     * isn't the same check as "you actually hold the instructor role", and
+     * this controller was missing that second check entirely (unlike every
+     * sibling controller under /instructor/*, which all guard on isInstructor()
+     * via some form of this same pattern). Without it, any logged-in account —
+     * a plain student role included — could request a real cash payout against
+     * any course where they happen to be instructor_id, including one created
+     * through the AdminCourseController::instructorStore() gap fixed alongside
+     * this.
+     */
+    private function assertInstructor(Request $request): void {
+        if (!$request->user()->isInstructor() && !$request->user()->isAdmin()) {
+            abort(403, 'Instructor access only.');
+        }
+    }
+
     /** GET /api/v1/instructor/payouts — instructor's own payouts */
     public function myPayouts(Request $request) {
+        $this->assertInstructor($request);
         $payouts = Payout::where('instructor_id',$request->user()->id)->orderByDesc('id')->get()->map(fn($p)=>$this->payload($p));
         return response()->json($payouts);
     }
 
     /** GET /api/v1/instructor/payouts/balance — earnings available to request as a payout */
     public function balance(Request $request) {
+        $this->assertInstructor($request);
         return response()->json(['balance' => $this->availableBalance($request->user()->id)]);
     }
 

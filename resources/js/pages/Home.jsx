@@ -8,9 +8,11 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useSiteContent } from "@/lib/useSiteContent";
 import LiveSearch from "@/components/LiveSearch";
+import MegaMenu from "@/components/MegaMenu";
+import Logo from "@/components/Logo";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 import {
   Search, BookOpen, Award, Users, Star, ChevronRight, ChevronDown,
@@ -30,24 +32,6 @@ const C = {
   w:"#FFFFFF", bg:"#FBF6EE", bd:"#E4DBC8",
   t1:"#211D1A", t2:"#5B564E", t3:"#8A8275",
 };
-
-// ── MEGA MENU DATA ────────────────────────────────────────────────────────────
-const MEGA_CATS = [
-  { name:"Web Development",   ic:"#28305E", bg:"#E8E9F1", count:245, icon:Code,       hot:["React & Next.js","Node.js & Express","Vue.js","Full Stack MERN"] },
-  { name:"Data Science",      ic:"#3A6B4C", bg:"#E3EDE6", count:180, icon:BarChart2,   hot:["Python for ML","Data Analysis","TensorFlow","SQL Mastery"] },
-  { name:"Graphic Design",    ic:"#C98A2C", bg:"#F5E9D4", count:160, icon:PenTool,     hot:["UI/UX with Figma","Adobe Photoshop","Brand Identity","Motion Graphics"] },
-  { name:"Digital Marketing", ic:"#6B4A6E", bg:"#EFE4EF", count:120, icon:TrendingUp,  hot:["SEO Masterclass","Facebook & IG Ads","Content Marketing","Email Marketing"] },
-  { name:"English & IELTS",   ic:"#2D6B6B", bg:"#DFEBEA", count:95,  icon:Globe,       hot:["IELTS 7.0+ Prep","Business English","Spoken English","Grammar Mastery"] },
-  { name:"Finance",           ic:"#8A5A3D", bg:"#EDE1D6", count:85,  icon:Lightbulb,   hot:["Accounting & Tally","Excel for Finance","Investment Basics","Tax & VAT BD"] },
-  { name:"Job Prep / BCS & Bank Jobs", ic:"#6B2C39", bg:"#EFE0E3", count:70, icon:Landmark, hot:["BCS Preliminary Prep","Bank Job Written Exam","BCS Written & Viva","Bank Math & English"] },
-];
-const MEGA_TOP = [
-  { title:"Complete React & Next.js Bootcamp", ins:"Tanvir Ahmed",      r:4.9, price:"৳1,200", emoji:"⚛️" },
-  { title:"Python for Data Science & ML",      ins:"Dr. Nasrin Khatun", r:4.8, price:"৳1,500", emoji:"🐍" },
-  { title:"IELTS Complete Prep 2025",           ins:"Kabir Hossain",     r:4.9, price:"৳1,100", emoji:"📝" },
-];
-const BLOG_MENU  = [["Career Tips","/blog"],["Web Development","/blog"],["Data Science","/blog"],["Design Tutorials","/blog"],["English & IELTS","/blog"],["Success Stories","/blog"],["All Articles →","/blog"]];
-const ABOUT_MENU = [["About EduBD","/about"],["Our Mission","/mission"],["Become an Instructor","/become-instructor"],["Press & Media","/press"],["Contact us","/contact"]];
 
 // ── COURSE & PAGE DATA ────────────────────────────────────────────────────────
 const CATS = [
@@ -118,143 +102,18 @@ function SH({ eyebrow, title, center = false }) {
 
 // ── NAVBAR — MEGA MENU ────────────────────────────────────────────────────────
 function Navbar() {
-  const C = useThemeColors(); // shadows the file's light-only palette below for this component
-  const [drop, setDrop] = useState(null); // "courses" | "blog" | "about" | null
-
-  const NavBtn = ({ id, label }) => (
-    <button
-      onMouseEnter={() => setDrop(id)}
-      style={{ display:"flex", alignItems:"center", gap:4, color: drop === id ? C.p : C.t2, fontSize:14, fontWeight: drop === id ? 700 : 500, padding:"7px 12px", borderRadius:8, background:"none", border:"none", cursor:"pointer", transition:"color .15s" }}
-    >
-      {label}
-      <ChevronDown size={13} style={{ transform: drop === id ? "rotate(180deg)" : "rotate(0deg)", transition:"transform .2s" }} />
-    </button>
-  );
-
-  const SmallDrop = ({ items }) => (
-    <div style={{ position:"absolute", top:"calc(100% + 10px)", left:0, background:C.w, border:`1px solid ${C.bd}`, borderRadius:14, boxShadow:"0 16px 40px rgba(0,0,0,.12)", zIndex:300, minWidth:215, padding:7 }}>
-      {items.map(([label, to]) => (
-        <Link key={label} to={to} style={{ display:"block", padding:"9px 14px", borderRadius:9, fontSize:13, color:C.t2, textDecoration:"none", fontWeight:500, transition:"all .12s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.pLt; e.currentTarget.style.color = C.p; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.t2; }}
-        >{label}</Link>
-      ))}
-    </div>
-  );
-
-  const MegaDrop = () => (
-    <div style={{ position:"absolute", top:"calc(100% + 10px)", left:"50%", transform:"translateX(-50%)", width:"min(880px, 92vw)", maxWidth:880, background:C.w, border:`1px solid ${C.bd}`, borderRadius:20, boxShadow:"0 24px 60px rgba(0,0,0,.13)", zIndex:300, padding:"28px 28px 22px" }}>
-      <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1fr", gap:32 }}>
-        {/* Left: categories */}
-        <div>
-          <p style={{ fontSize:11, fontWeight:700, color:C.t3, textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 14px" }}>Browse all categories</p>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:7 }}>
-            {MEGA_CATS.map(cat => (
-              <Link key={cat.name} to="/courses" style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"11px 12px", borderRadius:13, textDecoration:"none", border:"1.5px solid transparent", transition:"all .15s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = cat.bg; e.currentTarget.style.borderColor = cat.ic + "40"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
-              >
-                <div style={{ width:36, height:36, borderRadius:10, background:cat.bg, border:`1px solid ${cat.ic}20`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  <cat.icon size={18} color={cat.ic} />
-                </div>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.t1 }}>{cat.name}</div>
-                  <div style={{ fontSize:11, color:C.t3, marginTop:1 }}>{cat.count} courses</div>
-                  <div style={{ display:"flex", gap:4, marginTop:5, flexWrap:"wrap" }}>
-                    {cat.hot.slice(0, 2).map(h => (
-                      <span key={h} style={{ fontSize:10, color:cat.ic, background:cat.bg, padding:"1px 7px", borderRadius:100, fontWeight:600, border:`1px solid ${cat.ic}25` }}>{h}</span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <Link to="/courses" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:16, fontSize:13, fontWeight:700, color:C.p, textDecoration:"none" }}>
-            Browse all 500+ courses <ChevronRight size={14} />
-          </Link>
-        </div>
-
-        {/* Right: top courses + quick stats */}
-        <div>
-          <p style={{ fontSize:11, fontWeight:700, color:C.t3, textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 14px" }}>Most popular right now</p>
-          <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18 }}>
-            {MEGA_TOP.map(c => (
-              <Link key={c.title} to="/courses" style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:13, textDecoration:"none", border:`1.5px solid ${C.bd}`, background:C.bg, transition:"all .15s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.w; e.currentTarget.style.borderColor = C.p + "45"; e.currentTarget.style.boxShadow = `0 4px 12px ${C.p}14`; }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.borderColor = C.bd; e.currentTarget.style.boxShadow = ""; }}
-              >
-                <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>{c.emoji}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:C.t1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title}</div>
-                  <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{c.ins} · ⭐ {c.r}</div>
-                </div>
-                <div style={{ fontSize:13, fontWeight:800, color:C.p, whiteSpace:"nowrap" }}>{c.price}</div>
-              </Link>
-            ))}
-          </div>
-          <div style={{ background:C.pLt, borderRadius:13, padding:"14px 16px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-            {[["50K+","Students"],["500+","Courses"],["120+","Instructors"],["4.9★","Avg rating"]].map(([v, l]) => (
-              <div key={l}>
-                <div style={{ fontSize:17, fontWeight:900, color:C.p, letterSpacing:"-0.5px" }}>{v}</div>
-                <div style={{ fontSize:11, color:C.t3, marginTop:2 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <nav style={{ position:"sticky", top:0, zIndex:200, background:C.w, borderBottom:`1px solid ${C.bd}` }}
-      onMouseLeave={() => setDrop(null)}
-    >
-      <div style={{ display:"flex", alignItems:"center", height:68, gap:16, maxWidth:1280, margin:"0 auto", padding:"0 clamp(20px,4vw,40px)" }}>
-        {/* Logo */}
-        <Link to="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", flexShrink:0 }}>
-          <div style={{ width:38, height:38, borderRadius:11, background:`linear-gradient(135deg,${C.p},#4B5390)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <GraduationCap size={21} color="#fff" strokeWidth={2} />
-          </div>
-          <span style={{ fontFamily:"'Fraunces',serif", color:C.t1, fontWeight:600, fontSize:22, letterSpacing:"-0.3px" }}>
-            Edu<span style={{ color:C.a, fontStyle:"italic", fontWeight:500 }}>BD</span>
-          </span>
-        </Link>
-
-        {/* Links */}
-        <div style={{ display:"flex", alignItems:"center", gap:2, flex:1, position:"relative" }}>
-          <Link to="/" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}
-            onMouseEnter={e => e.target.style.color = C.p} onMouseLeave={e => e.target.style.color = C.t2}>Home</Link>
-
-          <div onMouseEnter={() => setDrop("courses")} style={{ position:"static" }}>
-            <NavBtn id="courses" label="Courses" />
-            {drop === "courses" && <MegaDrop />}
-          </div>
-
-          <Link to="/instructors" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}
-            onMouseEnter={e => e.target.style.color = C.p} onMouseLeave={e => e.target.style.color = C.t2}>Instructors</Link>
-
-          <Link to="/bundles" style={{ color:C.t2, fontSize:14, fontWeight:500, padding:"7px 12px", borderRadius:8, textDecoration:"none" }}
-            onMouseEnter={e => e.target.style.color = C.p} onMouseLeave={e => e.target.style.color = C.t2}>Bundles</Link>
-
-          <div style={{ position:"relative" }} onMouseEnter={() => setDrop("blog")}>
-            <NavBtn id="blog" label="Blog" />
-            {drop === "blog" && <SmallDrop items={BLOG_MENU} />}
-          </div>
-
-          <div style={{ position:"relative" }} onMouseEnter={() => setDrop("about")}>
-            <NavBtn id="about" label="About" />
-            {drop === "about" && <SmallDrop items={ABOUT_MENU} />}
-          </div>
-        </div>
-
-        {/* Auth */}
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <DarkModeToggle size="sm" />
-          <AuthNavActions />
-        </div>
-      </div>
-    </nav>
-  );
+  // Was a bespoke hover-triggered mega-dropdown (categories + a "most
+  // popular courses" live preview + a stats panel) — richer than every other
+  // page's navbar, but hover-only, so none of it was ever reachable on
+  // mobile either way. Swapped for the same shared, mobile-responsive
+  // MegaMenu every other page now uses, for one consistent nav instead of a
+  // patchwork where one page is prettier on desktop and every page is still
+  // broken on the device most visitors are actually using (see
+  // UPGRADE_PLAN.md Phase 5 item 15 — 71% of Bangladesh's web traffic is
+  // mobile). "Instructors" and About's four sub-pages, previously reachable
+  // only from this page's own dropdowns, are preserved as real menu_items so
+  // they don't lose their nav entry point.
+  return <MegaMenu logo={<Logo />} actions={<><DarkModeToggle size="sm" /><AuthNavActions /></>} />;
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
@@ -736,7 +595,7 @@ function Footer() {
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const C = useThemeColors();
-  usePageTitle("Home");
+  usePageSeo({ fallbackTitle: "Home" });
   const [query, setQuery] = useState("");
   const [tab,   setTab]   = useState("All");
   const { data: cms }     = useSiteContent("hero");

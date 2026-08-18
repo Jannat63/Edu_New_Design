@@ -113,6 +113,7 @@ class CourseController extends Controller
             'total_duration_minutes' => $course->total_duration_minutes,
             'requirements'    => $course->requirements ?? [],
             'what_you_learn'  => $course->what_you_learn ?? [],
+            'faqs'            => $course->faqs ?? [],
             'category'        => ['name' => $course->category?->name, 'slug' => $course->category?->slug],
             'instructor'      => [
                 'id'     => $course->instructor?->id,
@@ -124,7 +125,52 @@ class CourseController extends Controller
             'progress_pct'=> $progress,
             'meta_title'  => $course->meta_title,
             'meta_description' => $course->meta_description,
+            'og_image'    => $course->og_image_url,
+            // Phase 6 item 19, UPGRADE_PLAN.md — course pages had none of the
+            // standard marketplace conversion patterns (FAQ covered above;
+            // these two are the "why should I trust this purchase" pieces).
+            'related_courses'          => $this->relatedCourses($course),
+            'instructor_other_courses' => $this->instructorOtherCourses($course),
         ]);
+    }
+
+    /** Other published courses in the same category — "students also browse" */
+    private function relatedCourses(Course $course): array
+    {
+        return Course::published()
+            ->where('id', '!=', $course->id)
+            ->where('category_id', $course->category_id)
+            ->orderByDesc('average_rating')
+            ->orderByDesc('total_students')
+            ->limit(4)
+            ->get(['id', 'title', 'slug', 'thumbnail', 'price', 'discount_price', 'average_rating', 'total_students'])
+            ->map(fn($c) => [
+                'id' => $c->id, 'title' => $c->title, 'slug' => $c->slug,
+                'thumbnail' => $c->thumbnail_url, 'price' => (float) $c->price,
+                'effective_price' => (float) $c->effective_price,
+                'rating' => (float) $c->average_rating, 'total_students' => $c->total_students,
+            ])->toArray();
+    }
+
+    /** This instructor's other published courses — cross-promotion, uses the
+     *  instructorCourses() relationship that already existed on User but
+     *  wasn't surfaced anywhere on the course page itself. */
+    private function instructorOtherCourses(Course $course): array
+    {
+        if (!$course->instructor_id) return [];
+
+        return Course::published()
+            ->where('id', '!=', $course->id)
+            ->where('instructor_id', $course->instructor_id)
+            ->orderByDesc('total_students')
+            ->limit(4)
+            ->get(['id', 'title', 'slug', 'thumbnail', 'price', 'discount_price', 'average_rating', 'total_students'])
+            ->map(fn($c) => [
+                'id' => $c->id, 'title' => $c->title, 'slug' => $c->slug,
+                'thumbnail' => $c->thumbnail_url, 'price' => (float) $c->price,
+                'effective_price' => (float) $c->effective_price,
+                'rating' => (float) $c->average_rating, 'total_students' => $c->total_students,
+            ])->toArray();
     }
 
     // ── CURRICULUM ────────────────────────────────────────────────────────────

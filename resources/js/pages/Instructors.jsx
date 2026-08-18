@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, BookOpen, GraduationCap, Search } from "lucide-react";
 import { api } from "@/lib/api";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import AuthNavActions from "@/components/AuthNavActions";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
@@ -28,7 +28,7 @@ function initials(name) {
 
 export default function InstructorsPage() {
   const C = useThemeColors();
-  usePageTitle("Our Instructors");
+  usePageSeo({ fallbackTitle: "Our Instructors" });
 
   const [instructors, setInstructors] = useState(SAMPLE_INSTRUCTORS);
   const [loading,      setLoading]     = useState(true);

@@ -2,14 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, X, Menu as MenuIcon, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
-
-const C = {
-  p:"#28305E", pLt:"#E8E9F1", pDk:"#1A2044",
-  a:"#B23A2E",
-  w:"#FFFFFF", bg:"#FBF6EE", bd:"#E4DBC8",
-  t1:"#211D1A", t2:"#5B564E", t3:"#8A8275",
-  sidebar:"#171432",
-};
+import { useThemeColors } from "@/lib/darkMode";
 
 /**
  * MegaMenu — responsive navigation with mega-dropdown on desktop
@@ -21,6 +14,14 @@ const C = {
  * menu tree managed in Admin → Mega Menu.
  */
 export default function MegaMenu({ logo, actions, transparent = false }) {
+  // Was a hardcoded light-only palette before — every page this gets wired
+  // into already supports dark mode via this same hook (see UPGRADE_PLAN.md
+  // Phase 1 item 2), so a static C here would have silently broken dark mode
+  // specifically on the navbar the moment this replaced each page's own
+  // Navbar(). Same 10 keys that palette already had (p/pDk/pLt/a/w/bg/bd/
+  // t1/t2/t3) exist in both light and dark palettes; the one dropped key
+  // ("sidebar") was defined but never actually referenced anywhere below.
+  const C = useThemeColors();
   const [items, setItems]       = useState([]);
   const [open, setOpen]         = useState(null);   // id of open top-level item
   const [mobileOpen, setMobileOpen] = useState(false);

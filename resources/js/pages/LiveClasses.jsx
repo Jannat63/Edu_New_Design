@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { GraduationCap, Video, Calendar, Plus, X, Trash2, Radio } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import AuthNavActions from "@/components/AuthNavActions";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
@@ -172,7 +172,7 @@ function StudentPanel({ C }) {
 
 export default function LiveClassesPage() {
   const C = useThemeColors();
-  usePageTitle("Live Classes");
+  usePageSeo({ fallbackTitle: "Live Classes" });
   const { user } = useAuth();
   const isInstructor = user?.is_instructor || user?.is_admin;
 

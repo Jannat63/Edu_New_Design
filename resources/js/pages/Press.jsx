@@ -1,7 +1,7 @@
 import { GraduationCap, Mail, Download, Newspaper } from "lucide-react";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
@@ -12,7 +12,7 @@ const C = {
 
 export default function PressPage() {
   const C = useThemeColors();
-  usePageTitle("Press & Media");
+  usePageSeo({ fallbackTitle: "Press & Media" });
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" }}>

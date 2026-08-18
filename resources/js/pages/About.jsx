@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
 import { useSiteContent } from '@/lib/useSiteContent';
 import { renderContentBlocks } from '@/lib/renderContentBlocks';
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
 const C = {
@@ -22,7 +22,7 @@ const STATS = [
 
 export default function AboutPage() {
   const C = useThemeColors();
-  usePageTitle("About Us");
+  usePageSeo({ fallbackTitle: "About Us" });
   const { data: cms } = useSiteContent('about');
 
   return (

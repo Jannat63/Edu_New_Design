@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GraduationCap, Mail, MapPin, Phone, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import AuthNavActions from "@/components/AuthNavActions";
-import { usePageTitle } from "@/lib/usePageTitle";
+import { usePageSeo } from "@/lib/usePageSeo";
 import { toast } from "@/lib/toast";
 import { useThemeColors, DarkModeToggle } from "@/lib/darkMode";
 
@@ -14,7 +14,7 @@ const C = {
 
 export default function ContactPage() {
   const C = useThemeColors();
-  usePageTitle("Contact Us");
+  usePageSeo({ fallbackTitle: "Contact Us" });
 
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState("");
